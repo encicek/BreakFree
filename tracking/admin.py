@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import DependencyGoal, DailyLog
 
-# Register your models here.
+admin.site.register(DependencyGoal)
+admin.site.register(DailyLog)
