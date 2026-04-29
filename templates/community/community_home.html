@@ -5,20 +5,39 @@
     <h1>Community</h1>
     <p>Share your progress and support others.</p>
 
-    <a href="{% url 'create_post' %}" class="btn btn-primary mb-3">Create Post</a>
+    <div class="mb-3">
+        <a href="{% url 'create_post' %}" class="btn btn-primary">
+            Create Post
+        </a>
+
+        <a href="{% url 'user_list' %}" class="btn btn-success">
+            Find Friends
+        </a>
+    </div>
 
     {% for post in posts %}
         <div class="card mb-3">
             <div class="card-body">
                 <h4>{{ post.title }}</h4>
                 <p>{{ post.content|truncatewords:25 }}</p>
+
                 <p>
-                    <strong>Category:</strong> {{ post.get_addiction_type_display }} |
-                    <strong>By:</strong> {{ post.user.username }} |
-                    <strong>Comments:</strong> {{ post.total_comments }} |
-                    <strong>Supports:</strong> {{ post.total_supports }}
+                    <strong>Category:</strong>
+                    {{ post.get_addiction_type_display }} |
+
+                    <strong>By:</strong>
+                    {{ post.user.username }} |
+
+                    <strong>Comments:</strong>
+                    {{ post.total_comments }} |
+
+                    <strong>Supports:</strong>
+                    {{ post.total_supports }}
                 </p>
-                <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-primary btn-sm">View Details</a>
+
+                <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-primary btn-sm">
+                    View Details
+                </a>
             </div>
         </div>
     {% empty %}

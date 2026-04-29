@@ -59,3 +59,22 @@ class Support(models.Model):
 
     def __str__(self):
         return f"{self.user.username} supports {self.post.title}"
+
+class Friendship(models.Model):
+    from_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='friendships_sent'
+    )
+    to_user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='friendships_received'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('from_user', 'to_user')
+
+    def __str__(self):
+        return f"{self.from_user.username} follows {self.to_user.username}"

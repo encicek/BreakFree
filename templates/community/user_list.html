@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Find Friends</h1>
+    <p>Connect with people who are also working on their recovery journey.</p>
+
+    {% for user in users %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4>{{ user.username }}</h4>
+
+                <a href="{% url 'user_profile' user.username %}" class="btn btn-outline-primary btn-sm">
+                    View Profile
+                </a>
+
+                {% if user.id in friends %}
+                    <a href="{% url 'toggle_friend' user.id %}" class="btn btn-danger btn-sm">
+                        Remove Friend
+                    </a>
+                {% else %}
+                    <a href="{% url 'toggle_friend' user.id %}" class="btn btn-success btn-sm">
+                        Add Friend
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+        <p>No other users found.</p>
+    {% endfor %}
+</div>
+{% endblock %}

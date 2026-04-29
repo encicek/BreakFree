@@ -10,15 +10,44 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="#">7 Günlük Hedef</a>
+
+            <a class="navbar-brand fw-bold" href="#">
+                7 Günlük Hedef
+            </a>
+
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav me-auto">
+
                     <li class="nav-item">
-                        <a class="nav-link" href="/tracking/">Takip Paneli</a>
+                        <a class="nav-link" href="{% url 'tracking:dashboard' %}">
+                            Takip Paneli
+                        </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="nav-link" href="/community/">Topluluk</a>
+                        <a class="nav-link" href="{% url 'community_home' %}">
+                            Topluluk
+                        </a>
                     </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'user_list' %}">
+                            Arkadaş Bul
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'user_profile' request.user.username %}">
+                            Profilim
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="{% url 'logout' %}">
+                            Çıkış
+                        </a>
+                    </li>
+
                 </ul>
             </div>
         </div>
