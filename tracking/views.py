@@ -2,8 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import DependencyGoal, DailyLog
 from .forms import GoalForm, DailyLogForm
+import datetime
+import json
 
-# 1. BİLİMSEL TEMELLİ ANKET SORULARI (Değişmedi)
+# 1. BİLİMSEL TEMELLİ ANKET SORULARI
 DEPENDENCY_SURVEYS = {
     'sigara': [
         {'id': 1, 'text': 'Günde ortalama kaç adet sigara tüketiyorsunuz?', 'choices': [('0', '10 veya daha az'), ('10', '11-20 adet'), ('20', '21-30 adet'), ('30', '31 ve üzeri')]},
@@ -34,25 +36,50 @@ DEPENDENCY_SURVEYS = {
     ]
 }
 
-# 2. TAKİP PANELİ VE GÜNLÜK KAYIT
+# 2. AYLIk ANALİZ VE DASHBOARD
 @login_required(login_url='/accounts/login/')
 def dashboard(request):
-    # Kullanıcının aktif hedefini bul
     goal = DependencyGoal.objects.filter(user=request.user, is_active=True).first()
     
     if goal:
-        # 1. Temiz gün sayısını hesapla
-        clean_days = goal.logs.filter(relapse=False).count()
+        today = datetime.date.today()
+        start_of_month = today.replace(day=1)
         
-        # 2. Risk Seviyesini HESAPLA (Hata buradaydı, değişkeni mutlaka tanımlıyoruz)
-        if goal.initial_score > 70:
-            risk_level = "Yüksek"
-        elif goal.initial_score > 35:
-            risk_level = "Orta"
-        else:
-            risk_level = "Düşük"
+        # 1. Genel Seri
+        total_clean_days = goal.logs.filter(relapse=False).count()
+        
+        # 2. Aylık Veriler
+        current_month_logs = goal.logs.filter(date__gte=start_of_month)
+        monthly_clean_raw = current_month_logs.filter(relapse=False).count()
+        display_monthly_count = monthly_clean_raw if monthly_clean_raw <= 30 else 30
+        success_rate = int((display_monthly_count / 30) * 100)
 
-        # 3. Günlük kayıt formu işlemleri
+        # 3. Grafik Verisi (Son 30 kayıt)
+        last_logs = goal.logs.all().order_by('date')[:30]
+        chart_labels = [log.date.strftime('%d %b') for log in last_logs]
+        chart_data = [log.craving_level for log in last_logs]
+
+        # 4. PROFESYONEL ANALİZ VE RAPORLAMA MANTIĞI
+        avg_craving = sum(chart_data) / len(chart_data) if chart_data else 0
+        
+        if success_rate >= 90:
+            report_title = "Mükemmel İstikrar"
+            report_text = f"Nisan ayında %{success_rate} başarı oranıyla vücuduna harika bir hediye verdin. Hücrelerin yenileniyor ve iraden çelikleşiyor. 30 günün üzerinde temiz kalarak bağımlılığın nörolojik zincirlerini büyük oranda kırdın."
+            report_color = "success"
+        elif success_rate >= 70:
+            report_title = "Güçlü Gelişim"
+            report_text = f"Bu ay %{success_rate} oranında temiz kaldın. Bazı zor anların olsa da genel tabloda kazanan sensin. Ortalama zorlanma seviyen {avg_craving:.1f}/10. Bu, zihninin hala savaştığını ama pes etmediğini gösteriyor."
+            report_color = "info"
+        else:
+            report_title = "Dikkat: Riskli Bölge"
+            report_text = f"Bu ayki %{success_rate} başarı oranı, tetikleyicilerin seni zorladığını gösteriyor. Kendine verdiğin zararı minimize etmek için notlarını incele ve seni neyin geriye ittiğini analiz et."
+            report_color = "warning"
+
+        # Risk Seviyesi (Anket bazlı)
+        if goal.initial_score > 70: risk_level = "Yüksek"
+        elif goal.initial_score > 35: risk_level = "Orta"
+        else: risk_level = "Düşük"
+
         if request.method == 'POST':
             log_form = DailyLogForm(request.POST)
             if log_form.is_valid():
@@ -63,48 +90,49 @@ def dashboard(request):
         else:
             log_form = DailyLogForm()
 
-        # 4. Verileri sayfaya gönder
         context = {
             'goal': goal,
-            'clean_days': clean_days,
+            'clean_days': total_clean_days,
+            'success_rate': success_rate,
+            'monthly_count': display_monthly_count,
+            'risk_level': risk_level,
             'log_form': log_form,
-            'risk_level': risk_level # Buradaki risk_level artık tanımlı!
+            'current_month_name': today.strftime('%B'),
+            'chart_labels': json.dumps(chart_labels),
+            'chart_data': json.dumps(chart_data),
+            # Rapor verileri:
+            'report_title': report_title,
+            'report_text': report_text,
+            'report_color': report_color,
+            'avg_craving': round(avg_craving, 1),
         }
         return render(request, 'tracking/dashboard.html', context)
     
-    # Eğer aktif hedef yoksa butonların olduğu sayfaya yönlendir
     return render(request, 'tracking/dashboard.html', {'goal': None})
-    # EĞER HEDEF YOKSA: Sadece None gönder, template otomatik {% else %}'e düşecek
-    return render(request, 'tracking/dashboard.html', {'goal': None})
-# 3. ANKET SİSTEMİ
-@login_required(login_url='/accounts/login/') # BURAYI GÜNCELLEDİK
+
+# 3. ANKET SİSTEMİ (Aynı kalıyor)
+@login_required(login_url='/accounts/login/')
 def survey_view(request):
     dep_type = request.GET.get('type', 'sigara')
     questions = DEPENDENCY_SURVEYS.get(dep_type, DEPENDENCY_SURVEYS['sigara'])
-
     if request.method == 'POST':
         total_score = 0
         max_possible_score = 0
         for q in questions:
             max_possible_score += max([int(choice[0]) for choice in q['choices']])
-
         for key, value in request.POST.items():
-            if key.startswith('q_'):
-                total_score += int(value)
-        
+            if key.startswith('q_'): total_score += int(value)
         final_score = int((total_score / max_possible_score) * 100) if max_possible_score > 0 else 0
         request.session['calculated_score'] = final_score
         request.session['chosen_type'] = dep_type
         return redirect('tracking:create_goal')
-        
     return render(request, 'tracking/survey.html', {'questions': questions, 'type': dep_type})
 
-# 4. HEDEF OLUŞTURMA
-@login_required(login_url='/accounts/login/') # BURAYI GÜNCELLEDİK
+# 4. HEDEF OLUŞTURMA (Aynı kalıyor)
+@login_required(login_url='/accounts/login/')
 def create_goal(request):
     initial_score = request.session.get('calculated_score', 0)
     chosen_type = request.session.get('chosen_type', 'sigara')
-
     if request.method == 'POST':
         form = GoalForm(request.POST)
         if form.is_valid():
@@ -118,5 +146,4 @@ def create_goal(request):
             return redirect('tracking:dashboard')
     else:
         form = GoalForm(initial={'dependency_type': chosen_type, 'initial_score': initial_score})
-    
     return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score})
