@@ -1,26 +1,76 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row mt-4">
-    <div class="col-md-8 mx-auto">
-        <h2 class="mb-4">Hoş Geldin, {{ request.user.username }}!</h2>
-
-        {% if goal %}
-            <div class="card shadow-sm border-primary">
-                <div class="card-body text-center">
-                    <h4 class="text-primary">{{ goal.get_dependency_type_display }} Bağımlılığından Kurtulma Serüveni</h4>
-                    <p class="text-muted">Motivasyon Notun: "{{ goal.target_note }}"</p>
-                    
-                    <h1 class="display-1 fw-bold text-success mt-4">{{ clean_days }}</h1>
-                    <p class="lead">Gündür Temizsin! Harika Gidiyorsun.</p>
+<div class="container mt-5">
+    {% if goal %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 bg-dark text-white mb-4">
+                    <div class="card-body text-center p-4">
+                        <h6 class="text-uppercase mb-3">Temiz Gün Sayısı</h6>
+                        <h1 class="display-3 fw-bold">{{ clean_days }}</h1>
+                        <p class="mb-0">Tebrikler, harika gidiyorsun!</p>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <h5>Analiz Özeti</h5>
+                        <hr>
+                        <p><strong>Bağımlılık:</strong> <span class="badge bg-primary">{{ goal.get_dependency_type_display }}</span></p>
+                        <p><strong>Başlangıç Skoru:</strong> {{ goal.initial_score }}/100</p>
+                        <p><strong>Risk Durumu:</strong> 
+                            {% if risk_level == "Yüksek" %}
+                                <span class="text-danger fw-bold">Yüksek Risk</span>
+                            {% elif risk_level == "Orta" %}
+                                <span class="text-warning fw-bold">Orta Risk</span>
+                            {% else %}
+                                <span class="text-success fw-bold">Düşük Risk</span>
+                            {% endif %}
+                        </p>
+                    </div>
                 </div>
             </div>
-        {% else %}
-            <div class="alert alert-warning text-center">
-                Henüz bir hedef belirlemedin. Yeni bir sayfa açmak için hemen bir hedef oluştur!
-                <br><br>
-                <a href="{% url 'tracking:create_goal' %}" class="btn btn-primary">Yeni Hedef Oluştur</a>            </div>
-        {% endif %}
-    </div>
+
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="mb-0">Bugünü Kaydet</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Zorlanma Seviyesi (1-10)</label>
+                                {{ log_form.craving_level }}
+                            </div>
+                            <div class="form-check mb-3">
+                                {{ log_form.relapse }}
+                                <label class="form-check-label ms-2">Bugün kuralı bozdum (Relapse)</label>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notlar / Tetikleyiciler</label>
+                                {{ log_form.trigger }}
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Veriyi Kaydet</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="text-center py-5">
+            <h2 class="fw-bold">Yeni Bir Başlangıç Yap</h2>
+            <p class="text-muted">Lütfen takip etmek istediğiniz bağımlılık türünü seçin ve bilimsel analizi tamamlayın.</p>
+            
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <a href="{% url 'tracking:survey' %}?type=sigara" class="btn btn-outline-primary btn-lg px-4">Sigara</a>
+                <a href="{% url 'tracking:survey' %}?type=alkol" class="btn btn-outline-danger btn-lg px-4">Alkol</a>
+                <a href="{% url 'tracking:survey' %}?type=ekran" class="btn btn-outline-success btn-lg px-4">Ekran Süresi</a>
+                <a href="{% url 'tracking:survey' %}?type=madde" class="btn btn-outline-warning btn-lg px-4">Madde</a>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

@@ -6,4 +6,5 @@ app_name = 'tracking' # İleride link verirken karışmaması için isimlendiriy
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
 path('yeni-hedef/', views.create_goal, name='create_goal'),
+path('anket/', views.survey_view, name='survey'),
 ]
