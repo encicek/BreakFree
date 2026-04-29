@@ -25,6 +25,7 @@ def create_post(request):
     return render(request, 'community/create_post.html', {'form': form})
 
 
+@login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all().order_by('-created_at')
@@ -46,3 +47,14 @@ def post_detail(request, post_id):
         'comments': comments,
         'comment_form': comment_form,
     })
+
+@login_required
+def support_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    support, created = post.supports.get_or_create(user=request.user)
+
+    if not created:
+        support.delete()
+
+    return redirect('post_detail', post_id=post.id)
