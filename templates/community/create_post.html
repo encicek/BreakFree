@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Create Post</h1>
+    <p>Share your experience with the community.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.content.label_tag }}
+            {{ form.content }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.addiction_type.label_tag }}
+            {{ form.addiction_type }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Share</button>
+        <a href="{% url 'community_home' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

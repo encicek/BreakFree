@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Community</h1>
+    <p>Share your progress and support others.</p>
+
+    <a href="{% url 'create_post' %}" class="btn btn-primary mb-3">Create Post</a>
+
+    {% for post in posts %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4>{{ post.title }}</h4>
+                <p>{{ post.content|truncatewords:25 }}</p>
+                <p>
+                    <strong>Category:</strong> {{ post.get_addiction_type_display }} |
+                    <strong>By:</strong> {{ post.user.username }} |
+                    <strong>Comments:</strong> {{ post.total_comments }} |
+                    <strong>Supports:</strong> {{ post.total_supports }}
+                </p>
+                <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-primary btn-sm">View Details</a>
+            </div>
+        </div>
+    {% empty %}
+        <p>No posts yet. Be the first to share something.</p>
+    {% endfor %}
+</div>
+{% endblock %}
