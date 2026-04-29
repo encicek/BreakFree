@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-8 mx-auto">
+        <h2 class="mb-4">Hoş Geldin, {{ request.user.username }}!</h2>
+
+        {% if goal %}
+            <div class="card shadow-sm border-primary">
+                <div class="card-body text-center">
+                    <h4 class="text-primary">{{ goal.get_dependency_type_display }} Bağımlılığından Kurtulma Serüveni</h4>
+                    <p class="text-muted">Motivasyon Notun: "{{ goal.target_note }}"</p>
+                    
+                    <h1 class="display-1 fw-bold text-success mt-4">{{ clean_days }}</h1>
+                    <p class="lead">Gündür Temizsin! Harika Gidiyorsun.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-warning text-center">
+                Henüz bir hedef belirlemedin. Yeni bir sayfa açmak için hemen bir hedef oluştur!
+                <br><br>
+                <a href="{% url 'tracking:create_goal' %}" class="btn btn-primary">Yeni Hedef Oluştur</a>            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
