@@ -1,14 +1,33 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4" style="max-width: 500px;">
-    <h2>Login</h2>
+<div class="container mt-5" style="max-width: 400px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4 text-center">
+            <h2 class="mb-4">Giriş Yap</h2>
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
+            <!-- Standart Kullanıcı Giriş Formu -->
+            <form method="POST">
+                {% csrf_token %}
+                <div class="text-start mb-3">
+                    {{ form.as_p }}
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2">Kullanıcı Girişi</button>
+            </form>
 
-        <button type="submit" class="btn btn-primary">Login</button>
-    </form>
+            <div class="mt-4">
+                <p class="mb-1 text-muted small">Hesabınız yok mu?</p>
+                <a href="{% url 'register' %}" class="btn btn-outline-success btn-sm w-100">Yeni Kayıt Oluştur</a>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Yönetici Paneli Girişi -->
+            <div>
+                <p class="mb-1 text-muted small">Sistem yöneticisi misiniz?</p>
+                <a href="/admin/" class="btn btn-dark btn-sm w-100">Yönetici (Admin) Girişi</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

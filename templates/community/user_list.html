@@ -2,25 +2,27 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Find Friends</h1>
-    <p>Connect with people who are also working on their recovery journey.</p>
+    <h1>Arkadaş Bul</h1>
+    <p>Bu yolculukta yalnız değilsin; seninle aynı hedefi paylaşan topluluğa katıl</p>
 
     {% for user in users %}
         <div class="card mb-3">
             <div class="card-body">
                 <h4>{{ user.username }}</h4>
 
-                <a href="{% url 'user_profile' user.username %}" class="btn btn-outline-primary btn-sm">
-                    View Profile
+                <a href="{% url 'community:user_profile' username=user.username %}" class="btn btn-outline-primary btn-sm">
+                    Profil Görüntüle
                 </a>
 
                 {% if user.id in friends %}
-                    <a href="{% url 'toggle_friend' user.id %}" class="btn btn-danger btn-sm">
-                        Remove Friend
+                    <!-- BURASI DÜZELDİ -->
+                    <a href="{% url 'community:toggle_friend' user_id=user.id %}" class="btn btn-danger btn-sm">
+                        Arkadaş Ekle
                     </a>
                 {% else %}
-                    <a href="{% url 'toggle_friend' user.id %}" class="btn btn-success btn-sm">
-                        Add Friend
+                    <!-- BURASI DA DÜZELDİ -->
+                    <a href="{% url 'community:toggle_friend' user_id=user.id %}" class="btn btn-success btn-sm">
+                        Arkadaş Çıkar
                     </a>
                 {% endif %}
             </div>

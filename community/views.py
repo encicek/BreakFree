@@ -1,15 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from datetime import date
+from datetime import date, timedelta
+from django.template.loader import render_to_string
+from django.http import HttpResponse
 
 from .models import Post, Friendship
 from .forms import PostForm, CommentForm
 from tracking.models import DependencyGoal
 
-
 def community_home(request):
     posts = Post.objects.all().order_by('-created_at')
+    
+    # AJAX isteği kontrolü
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('community/posts_list_partial.html', {'posts': posts})
+        return HttpResponse(html)
+        
     return render(request, 'community/community_home.html', {'posts': posts})
 
 
@@ -17,15 +24,13 @@ def community_home(request):
 def create_post(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
-
         if form.is_valid():
             post = form.save(commit=False)
             post.user = request.user
             post.save()
-            return redirect('community_home')
+            return redirect('community:community_home')
     else:
         form = PostForm()
-
     return render(request, 'community/create_post.html', {'form': form})
 
 
@@ -36,13 +41,12 @@ def post_detail(request, post_id):
 
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
-
         if comment_form.is_valid():
             comment = comment_form.save(commit=False)
             comment.post = post
             comment.user = request.user
             comment.save()
-            return redirect('post_detail', post_id=post.id)
+            return redirect('community:post_detail', post_id=post.id)
     else:
         comment_form = CommentForm()
 
@@ -55,18 +59,14 @@ def post_detail(request, post_id):
 @login_required
 def support_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-
     support, created = post.supports.get_or_create(user=request.user)
-
     if not created:
         support.delete()
-
-    return redirect('post_detail', post_id=post.id)
+    return redirect('community:post_detail', post_id=post.id)
 
 @login_required
 def user_list(request):
     users = User.objects.exclude(id=request.user.id)
-
     friends = Friendship.objects.filter(
         from_user=request.user
     ).values_list('to_user_id', flat=True)
@@ -80,8 +80,11 @@ def user_list(request):
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-
     posts = Post.objects.filter(user=profile_user).order_by('-created_at')
+
+    # --- TAKİP SİSTEMİ VERİSİ ---
+    following_relations = Friendship.objects.filter(from_user=profile_user)
+    following_list = [rel.to_user for rel in following_relations]
 
     is_friend = Friendship.objects.filter(
         from_user=request.user,
@@ -93,21 +96,39 @@ def user_profile(request, username):
         is_active=True
     ).first()
 
+    # Varsayılan değerler
     clean_days = 0
     risk_level = None
     recent_logs = None
-
     monthly_success_rate = 0
     monthly_total_logs = 0
     monthly_relapses = 0
     monthly_success_days = 0
+    weekly_activity = 0
+    current_status = "Bilinmiyor"
 
     if goal:
-        relapse_count = goal.logs.filter(relapse=True).count()
-        total_days = (date.today() - goal.start_date).days + 1
-        clean_days = max(total_days - relapse_count, 0)
+        # --- GÜN BAZLI HESAPLAMA (Karar Rehberi) ---
+        # Aynı gün girilen birden fazla başarılı kayıt tek bir gün sayılır.
+        clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
 
-        recent_logs = goal.logs.all()[:5]
+        # --- HAFTALIK İSTİKRAR (Arkadaş Gözlemi İçin) ---
+        last_week = date.today() - timedelta(days=7)
+        weekly_activity = goal.logs.filter(date__gte=last_week).values('date').distinct().count()
+
+        # --- GÜNCEL DUYGU DURUMU ---
+        last_log = goal.logs.first() # ordering meta verisinden dolayı en sonuncuyu alır
+        if last_log:
+            if last_log.relapse:
+                current_status = "Kriz Yaşadı"
+            elif last_log.craving_level >= 7:
+                current_status = "Risk Altında"
+            elif last_log.craving_level >= 4:
+                current_status = "Zorlanıyor"
+            else:
+                current_status = "Güvende"
+
+        recent_logs = goal.logs.all().order_by('-date')[:5]
 
         today = date.today()
         monthly_logs = goal.logs.filter(
@@ -120,9 +141,7 @@ def user_profile(request, username):
         monthly_success_days = monthly_total_logs - monthly_relapses
 
         if monthly_total_logs > 0:
-            monthly_success_rate = round(
-                (monthly_success_days / monthly_total_logs) * 100
-            )
+            monthly_success_rate = round((monthly_success_days / monthly_total_logs) * 100)
 
         if goal.initial_score >= 70:
             risk_level = "Yüksek"
@@ -143,20 +162,22 @@ def user_profile(request, username):
         'monthly_total_logs': monthly_total_logs,
         'monthly_relapses': monthly_relapses,
         'monthly_success_days': monthly_success_days,
+        'following_list': following_list,
+        'weekly_activity': weekly_activity,
+        'current_status': current_status,
     })
 
 
 @login_required
 def toggle_friend(request, user_id):
     to_user = get_object_or_404(User, id=user_id)
-
+    
     if to_user != request.user:
         friendship, created = Friendship.objects.get_or_create(
             from_user=request.user,
             to_user=to_user
         )
-
         if not created:
             friendship.delete()
 
-    return redirect('user_profile', username=to_user.username)
+    return redirect(request.META.get('HTTP_REFERER', 'community:user_profile'))

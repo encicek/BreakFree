@@ -3,67 +3,81 @@
 {% block content %}
 <div class="container mt-4">
 
-    <a href="{% url 'community_home' %}" class="btn btn-secondary mb-3">
-        Back to Community
+    <!-- Topluluk ana sayfasına dönüş butonu -->
+    <a href="{% url 'community:community_home' %}" class="btn btn-secondary mb-3 shadow-sm">
+        <i class="bi bi-arrow-left"></i> Topluluğa Dön
     </a>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <h2>{{ post.title }}</h2>
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body p-4">
+            <h2 class="fw-bold text-dark">{{ post.title }}</h2>
+            <hr>
+            <p class="lead">{{ post.content }}</p>
 
-            <p>{{ post.content }}</p>
+            <div class="mt-4 pt-2 border-top">
+                <p class="mb-1">
+                    <strong>Kategori:</strong>
+                    <span class="badge bg-info text-dark">{{ post.get_addiction_type_display }}</span>
+                </p>
 
-            <p>
-                <strong>Category:</strong>
-                {{ post.get_addiction_type_display }}
-            </p>
+                <p class="mb-1">
+                    <strong>Paylaşan:</strong>
+                    <span class="text-primary fw-bold">{{ post.user.username }}</span>
+                </p>
 
-            <p>
-                <strong>By:</strong>
-                {{ post.user.username }}
-            </p>
+                <p class="mb-3">
+                    <strong>Destekleyen Kişi Sayısı:</strong>
+                    <span class="badge bg-light text-success border">{{ post.total_supports }}</span>
+                </p>
 
-            <p>
-                <strong>Supports:</strong>
-                {{ post.total_supports }}
-            </p>
-
-            <form method="POST" action="{% url 'support_post' post.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success">
-                    Support / Unsupport
-                </button>
-            </form>
+                <!-- Destek Ol Butonu (Namespace hatası giderildi) -->
+                <form method="POST" action="{% url 'community:support_post' post.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success shadow-sm">
+                        {% if user in post.supports.all %}
+                            Desteği Çek
+                        {% else %}
+                            Destek Ol
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <h3>Comments</h3>
+    <h3 class="mb-3">Yorumlar</h3>
 
     {% for comment in comments %}
-        <div class="card mb-2">
-            <div class="card-body">
-                <p>{{ comment.content }}</p>
-                <small>
-                    By {{ comment.user.username }}
+        <div class="card mb-2 border-0 shadow-sm bg-light">
+            <div class="card-body py-3">
+                <p class="mb-1">{{ comment.content }}</p>
+                <small class="text-muted">
+                    <strong>{{ comment.user.username }}</strong> tarafından yazıldı.
                 </small>
             </div>
         </div>
     {% empty %}
-        <p>No comments yet.</p>
+        <div class="alert alert-light border small">
+            Henüz yorum yapılmamış. İlk yorumu sen yap!
+        </div>
     {% endfor %}
 
-    <hr>
+    <hr class="my-4">
 
-    <h3>Add Comment</h3>
+    <h3 class="mb-3">Yorum Yap</h3>
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ comment_form.as_p }}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                {{ comment_form.as_p }}
 
-        <button type="submit" class="btn btn-primary">
-            Add Comment
-        </button>
-    </form>
+                <button type="submit" class="btn btn-primary w-100">
+                    Yorumu Gönder
+                </button>
+            </form>
+        </div>
+    </div>
 
 </div>
 {% endblock %}

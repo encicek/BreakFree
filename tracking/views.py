@@ -45,16 +45,17 @@ def dashboard(request):
         today = datetime.date.today()
         start_of_month = today.replace(day=1)
         
-        # 1. Genel Seri
-        total_clean_days = goal.logs.filter(relapse=False).count()
+        # 1. Genel Seri (GÜNCELLEME: Aynı gün girilen çoklu kayıtları TEK gün sayar)
+        total_clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
         
-        # 2. Aylık Veriler
+        # 2. Aylık Veriler (GÜNCELLEME: Aylık sayacı da benzersiz günlere göre güncelledik)
         current_month_logs = goal.logs.filter(date__gte=start_of_month)
-        monthly_clean_raw = current_month_logs.filter(relapse=False).count()
-        display_monthly_count = monthly_clean_raw if monthly_clean_raw <= 30 else 30
+        monthly_clean_unique = current_month_logs.filter(relapse=False).values('date').distinct().count()
+        
+        display_monthly_count = monthly_clean_unique if monthly_clean_unique <= 30 else 30
         success_rate = int((display_monthly_count / 30) * 100)
 
-        # 3. Grafik Verisi (Son 30 kayıt)
+        # 3. Grafik Verisi (Son 30 kayıt - Burada tüm kayıtlar görünebilir, trend analizi için)
         last_logs = goal.logs.all().order_by('date')[:30]
         chart_labels = [log.date.strftime('%d %b') for log in last_logs]
         chart_data = [log.craving_level for log in last_logs]
@@ -64,7 +65,7 @@ def dashboard(request):
         
         if success_rate >= 90:
             report_title = "Mükemmel İstikrar"
-            report_text = f"Nisan ayında %{success_rate} başarı oranıyla vücuduna harika bir hediye verdin. Hücrelerin yenileniyor ve iraden çelikleşiyor. 30 günün üzerinde temiz kalarak bağımlılığın nörolojik zincirlerini büyük oranda kırdın."
+            report_text = f"Bu ay %{success_rate} başarı oranıyla vücuduna harika bir hediye verdin. Hücrelerin yenileniyor ve iraden çelikleşiyor. 30 günün üzerinde temiz kalarak bağımlılığın nörolojik zincirlerini büyük oranda kırdın."
             report_color = "success"
         elif success_rate >= 70:
             report_title = "Güçlü Gelişim"
@@ -100,7 +101,6 @@ def dashboard(request):
             'current_month_name': today.strftime('%B'),
             'chart_labels': json.dumps(chart_labels),
             'chart_data': json.dumps(chart_data),
-            # Rapor verileri:
             'report_title': report_title,
             'report_text': report_text,
             'report_color': report_color,
@@ -110,7 +110,7 @@ def dashboard(request):
     
     return render(request, 'tracking/dashboard.html', {'goal': None})
 
-# 3. ANKET SİSTEMİ (Aynı kalıyor)
+# 3. ANKET SİSTEMİ
 @login_required(login_url='/accounts/login/')
 def survey_view(request):
     dep_type = request.GET.get('type', 'sigara')
@@ -128,7 +128,7 @@ def survey_view(request):
         return redirect('tracking:create_goal')
     return render(request, 'tracking/survey.html', {'questions': questions, 'type': dep_type})
 
-# 4. HEDEF OLUŞTURMA (Aynı kalıyor)
+# 4. HEDEF OLUŞTURMA
 @login_required(login_url='/accounts/login/')
 def create_goal(request):
     initial_score = request.session.get('calculated_score', 0)

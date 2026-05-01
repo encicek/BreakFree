@@ -2,46 +2,38 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Community</h1>
-    <p>Share your progress and support others.</p>
+    <h1>Topluluk</h1>
+    <p>Gelişimini paylaş ve diğerlerini destekle.</p>
 
     <div class="mb-3">
-        <a href="{% url 'create_post' %}" class="btn btn-primary">
-            Create Post
+        <a href="{% url 'community:create_post' %}" class="btn btn-primary">
+            Post Oluştur
         </a>
-
-        <a href="{% url 'user_list' %}" class="btn btn-success">
-            Find Friends
-        </a>
+        <!-- "Find Friends" butonu buradan kaldırıldı (İstek 2) -->
     </div>
 
-    {% for post in posts %}
-        <div class="card mb-3">
-            <div class="card-body">
-                <h4>{{ post.title }}</h4>
-                <p>{{ post.content|truncatewords:25 }}</p>
-
-                <p>
-                    <strong>Category:</strong>
-                    {{ post.get_addiction_type_display }} |
-
-                    <strong>By:</strong>
-                    {{ post.user.username }} |
-
-                    <strong>Comments:</strong>
-                    {{ post.total_comments }} |
-
-                    <strong>Supports:</strong>
-                    {{ post.total_supports }}
-                </p>
-
-                <a href="{% url 'post_detail' post.id %}" class="btn btn-outline-primary btn-sm">
-                    View Details
-                </a>
-            </div>
-        </div>
-    {% empty %}
-        <p>No posts yet. Be the first to share something.</p>
-    {% endfor %}
+    <!-- Postların geleceği konteyner -->
+    <div id="post-container">
+        {% include 'community/posts_list_partial.html' %}
+    </div>
 </div>
+
+<!-- Otomatik Güncelleme Scripti (İstek 1) -->
+<script>
+    function fetchPosts() {
+        fetch("{% url 'community:community_home' %}", {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('post-container').innerHTML = html;
+        })
+        .catch(err => console.warn('Güncelleme sırasında hata oluştu:', err));
+    }
+
+    // Her 5 saniyede bir fetchPosts fonksiyonunu çalıştır (5000 milisaniye)
+    setInterval(fetchPosts, 5000);
+</script>
 {% endblock %}
