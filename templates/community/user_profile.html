@@ -2,8 +2,7 @@
 
 {% block content %}
 <div class="container mt-5">
-
-    <!-- 1. Profil Başlık Alanı -->
+    <!-- 1. Profil Başlık Alanı (Değişmedi) -->
     <div class="card shadow-sm border-0 mb-4 bg-white">
         <div class="card-body d-flex justify-content-between align-items-center p-4">
             <div>
@@ -40,14 +39,15 @@
                                 <span class="badge bg-light text-dark border small">{{ goal.initial_score }} Puan</span>
                             </div>
                             
+                            <!-- 🚨 DÜZELTME: Buradaki sayılar artık Views.py'daki streak hesabından geliyor -->
                             <div class="row g-0 text-center bg-light rounded p-2 mb-2">
                                 <div class="col-6 border-end">
-                                    <small class="text-muted d-block" style="font-size: 0.7rem;">KAYITLI GÜN</small>
-                                    <span class="fw-bold text-success">{{ goal.logs.count }}</span>
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">KESİNTİSİZ SERİ</small>
+                                    <h4 class="fw-bold mb-0 text-success">{{ goal.streak }}</h4>
                                 </div>
                                 <div class="col-6">
                                     <small class="text-muted d-block" style="font-size: 0.7rem;">DURUM</small>
-                                    <span class="fw-bold text-primary" style="font-size: 0.8rem;">{{ current_status }}</span>
+                                    <span class="fw-bold text-primary" style="font-size: 0.8rem;">{{ goal.status }}</span>
                                 </div>
                             </div>
 
@@ -62,7 +62,7 @@
                     </div>
                 {% endfor %}
 
-                {% if request.user == profile_user and active_goals.count < 4 %}
+                {% if request.user == profile_user and active_goals|length < 4 %}
                     <a href="{% url 'tracking:dashboard' %}?new_goal=true" class="btn btn-outline-primary btn-sm w-100 rounded-pill mb-4 shadow-sm fw-bold">
                         <i class="bi bi-plus-circle"></i> Yeni Mücadele Ekle
                     </a>
@@ -86,10 +86,8 @@
                 </div>
             </div>
 
-            <!-- SAĞ KOLON -->
+            <!-- SAĞ KOLON (Değişmedi, aynı kalabilir) -->
             <div class="col-md-8">
-                
-                <!-- 🚨 2. YOL ARKADAŞLARINDAN HABERLER (Sadece Kendi Profilinde Görünür) -->
                 {% if request.user == profile_user %}
                 <div class="card shadow-sm border-0 mb-4 border-start border-primary border-4">
                     <div class="card-header bg-white py-3 border-bottom">
@@ -123,7 +121,7 @@
                 </div>
                 {% endif %}
 
-                <!-- 3. Son Kayıtlar -->
+                <!-- Son Kayıtlar (Burası image_6de355.png'deki gibi görünecek) -->
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">Son Günlük Kayıtları</h5>
@@ -156,7 +154,7 @@
             </div>
         </div>
     {% else %}
-        <!-- Boş Durum Analizi -->
+        <!-- Boş Durum (Değişmedi) -->
         <div class="alert alert-info shadow-sm border-0 p-5 text-center">
             <i class="bi bi-info-circle display-4 d-block mb-3"></i>
             <p class="mb-3 fw-bold fs-5">Henüz aktif bir mücadele hedefi bulunmuyor.</p>

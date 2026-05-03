@@ -3,91 +3,105 @@
 {% block content %}
 <div class="container mt-5">
     {% if goal and not request.GET.new_goal %}
-        <!-- 🚨 1. AKTİF TAKİP EKRANI -->
+        <!-- ÜST BAR: ANALİZ EDİLEN HEDEF -->
         <div class="card shadow-sm border-0 mb-4 bg-primary bg-opacity-10">
             <div class="card-body d-flex justify-content-between align-items-center py-2">
                 <span class="fw-bold text-primary small"><i class="bi bi-funnel-fill"></i> ANALİZ EDİLEN HEDEF:</span>
                 <div class="dropdown">
-                    <!-- Dropdown tetikleyicisi düzeltildi -->
-                    <button class="btn btn-white btn-sm dropdown-toggle fw-bold border shadow-sm" type="button" id="dropdownGoalMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-white btn-sm dropdown-toggle fw-bold border shadow-sm" type="button" id="dropdownGoalMenu" data-bs-toggle="dropdown">
                         {{ goal.get_dependency_type_display }}
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownGoalMenu">
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                         {% for g in all_active_goals %}
                             <li><a class="dropdown-item small {% if g.id == goal.id %}active{% endif %}" href="?goal_id={{ g.id }}">{{ g.get_dependency_type_display }}</a></li>
                         {% endfor %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item small text-primary fw-bold" href="?new_goal=true"><i class="bi bi-plus-circle"></i> Yeni Mücadele Başlat</a></li>
                     </ul>
                 </div>
             </div>
         </div>
 
         <div class="row">
-            <!-- SOL KOLON -->
+            <!-- SOL KOLON: Özet İstatistikler -->
             <div class="col-md-4">
                 <div class="card shadow-sm border-0 bg-dark text-white mb-4">
                     <div class="card-body text-center p-4">
-                        <h6 class="text-uppercase mb-2" style="letter-spacing: 1px; font-size: 0.8rem;">BU SÜREÇTEKİ BAŞARIN</h6>
+                        <h6 class="text-uppercase mb-2 small fw-bold">TOPLAM BAŞARI SERİSİ</h6>
                         <h1 class="display-3 fw-bold">{{ clean_days }}</h1>
-                        <p class="mb-0 text-info small">{{ goal.get_dependency_type_display }} için temiz gün sayın!</p>
+                        <p class="mb-0 text-info small">Kesintisiz temiz gün sayın!</p>
                     </div>
                 </div>
 
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
-                        <h6 class="text-uppercase text-muted fw-bold mb-3 small">Performans</h6>
-                        <div class="progress mb-3" style="height: 20px; border-radius: 10px;">
-                            <div class="progress-bar bg-success" style="width: {{ success_rate }}%">%{{ success_rate }}</div>
+                        <h6 class="text-uppercase text-muted fw-bold mb-3 small">{{ current_month_name|upper }} AYI PERFORMANSI</h6>
+                        <div class="progress mb-2" style="height: 12px; border-radius: 6px;">
+                            <div class="progress-bar bg-success" style="width: {{ success_rate }}%"></div>
                         </div>
+                        <div class="d-flex justify-content-between small mt-2">
+                            <span class="text-muted">Bu Ay: <strong>{{ monthly_count }} Gün</strong></span>
+                            <span class="text-muted border rounded px-1">Hedef: 30</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <p class="mb-1 small text-muted fw-bold text-uppercase">Bağımlılık: <span class="text-dark">{{ goal.get_dependency_type_display }}</span></p>
+                        <p class="mb-0 small text-muted fw-bold text-uppercase">Anket Riski: <span class="text-warning">{{ risk_level }}</span></p>
+                        <hr class="my-2 opacity-50">
+                        <div class="small text-muted fst-italic">Son verilere göre oluşturulan risk profilidir.</div>
                     </div>
                 </div>
             </div>
 
-            <!-- SAĞ KOLON (Analiz ve Form) -->
+            <!-- SAĞ KOLON: Analiz ve Grafik -->
             <div class="col-md-8">
+                <!-- AYLIK NAVİGASYON -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <a href="?goal_id={{ goal.id }}&month={{ prev_month }}" class="btn btn-sm btn-light border shadow-sm px-3">←</a>
+                    <h6 class="mb-0 fw-bold text-muted text-uppercase small">{{ current_month_name }} {{ current_year }} Raporu</h6>
+                    <a href="?goal_id={{ goal.id }}&month={{ next_month }}" class="btn btn-sm btn-light border shadow-sm px-3">→</a>
+                </div>
+
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">Profesyonel Durum Analizi</h5>
-                        <span class="badge bg-{{ report_color }}">{{ report_title }}</span>
+                        <span class="badge bg-{{ report_color }} text-uppercase" style="font-size: 0.65rem;">{{ report_title }}</span>
                     </div>
                     <div class="card-body p-4">
-                        <p class="fs-5 border-start border-4 border-{{ report_color }} ps-3 fst-italic">"{{ report_text }}"</p>
+                        <p class="fs-6 border-start border-4 border-{{ report_color }} ps-3 text-muted fst-italic">"{{ report_text }}"</p>
                         
-                        <!-- GRAFİK -->
-                        <div class="mt-4" style="height: 250px;">
-                            <canvas id="cravingChart"></canvas>
+                        <!-- ÖZET İSTATİSTİKLER -->
+                        <div class="row text-center mb-4 g-0 border rounded py-3 bg-light bg-opacity-50">
+                            <div class="col-6 border-end">
+                                <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.6rem;">AYLIK ORT. ZORLANMA</small>
+                                <h4 class="fw-bold mb-0">{{ avg_craving }} / 10</h4>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.6rem;">BİYOLOJİK DURUM</small>
+                                <h4 class="fw-bold mb-0 text-success">{{ bio_status }}</h4>
+                            </div>
                         </div>
+
+                        <h6 class="text-center small fw-bold text-muted text-uppercase mb-3">Zorlanma Trendi Grafiği</h6>
+                        <div style="height: 250px;"><canvas id="cravingChart"></canvas></div>
                     </div>
                 </div>
 
-                <!-- VERİ GİRİŞ FORMU -->
+                <!-- VERİ GİRİŞ FORMU (Alt Kısım) -->
                 <div class="card shadow-sm border-0 border-top border-primary border-4">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-4 text-primary">Bugünkü Durumunu Kaydet</h5>
                         <form method="POST">
                             {% csrf_token %}
                             <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="small fw-bold">Mücadele Türü</label>
-                                    {{ log_form.goal }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold">Tarih</label>
-                                    {{ log_form.date }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="small fw-bold">Zorlanma (1-10)</label>
-                                    {{ log_form.craving_level }}
-                                </div>
+                                <div class="col-12">{{ log_form.goal }}</div>
+                                <div class="col-md-6">{{ log_form.date }}</div>
+                                <div class="col-md-6">{{ log_form.craving_level }}</div>
                                 <div class="col-12 text-center py-2">
                                     <div class="form-check form-switch d-inline-block">
-                                        {{ log_form.relapse }}
-                                        <label class="ms-2 fw-bold text-danger">Bozdum (Relapse)</label>
+                                        {{ log_form.relapse }}<label class="ms-2 fw-bold text-danger small">Bozdum (Relapse)</label>
                                     </div>
-                                </div>
-                                <div class="col-12">
-                                    {{ log_form.trigger }}
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow">VERİYİ KAYDET</button>
                             </div>
@@ -96,74 +110,55 @@
                 </div>
             </div>
         </div>
-
-    {% else %}
-        <!-- 🚨 2. SEÇİM EKRANI (Beyaz Sayfayı Engelleyen Kısım) -->
-        <div class="text-center py-5">
-            <h1 class="fw-bold mb-3">Yolculuğun Başlıyor!</h1>
-            <p class="text-muted fs-5">Analiz odaklı bir mücadele seç ve değişimi başlat:</p>
-            
-            <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-                {% if 'sigara' not in existing_types %}
-                    <a href="{% url 'tracking:survey' %}?type=sigara" class="btn btn-outline-primary btn-lg px-4 rounded-pill shadow-sm">🚬 Sigara</a>
-                {% endif %}
-
-                {% if 'alkol' not in existing_types %}
-                    <a href="{% url 'tracking:survey' %}?type=alkol" class="btn btn-outline-danger btn-lg px-4 rounded-pill shadow-sm">🍷 Alkol</a>
-                {% endif %}
-
-                {% if 'ekran' not in existing_types %}
-                    <a href="{% url 'tracking:survey' %}?type=ekran" class="btn btn-outline-success btn-lg px-4 rounded-pill shadow-sm">📱 Ekran</a>
-                {% endif %}
-
-                {% if 'madde' not in existing_types %}
-                    <a href="{% url 'tracking:survey' %}?type=madde" class="btn btn-outline-warning btn-lg px-4 text-dark rounded-pill shadow-sm">💊 Madde</a>
-                {% endif %}
-            </div>
-
-            {% if all_active_goals.exists %}
-                <div class="mt-5">
-                    <a href="{% url 'tracking:dashboard' %}" class="btn btn-link text-muted text-decoration-none">
-                        <i class="bi bi-arrow-left"></i> Vazgeç ve Mevcut Analize Dön
-                    </a>
-                </div>
-            {% endif %}
-        </div>
     {% endif %}
 </div>
 
-<!-- Scripts -->
+<!-- SCRIPTS: Chart.js ve Grafik Mantığı aynı kalıyor -->
+ <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const chartElement = document.getElementById('cravingChart');
         if (chartElement) {
+            // Backend'den gelen JSON verilerini JavaScript dizisine çeviriyoruz
             const labels = {{ chart_labels|safe }};
             const data = {{ chart_data|safe }};
             
             new Chart(chartElement, {
                 type: 'line',
                 data: {
-                    labels: labels.length ? labels : ['Kayıt Bekleniyor'],
+                    labels: labels.length ? labels : ['Bu ay kayıt bulunamadı'],
                     datasets: [{
-                        label: 'Zorlanma',
+                        label: 'Zorlanma Seviyesi',
                         data: data.length ? data : [0],
-                        borderColor: '#0d6efd',
-                        tension: 0.4,
+                        borderColor: '#0d6efd', // Mavi çizgi
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)', // Çizgi altı hafif dolgu
+                        tension: 0.4, // Çizginin kavisli durması için
                         fill: true,
-                        backgroundColor: 'rgba(13, 110, 253, 0.05)',
-                        pointRadius: 4
+                        pointRadius: 5,
+                        pointBackgroundColor: '#0d6efd',
+                        borderWidth: 3
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: { 
-                        y: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } },
-                        x: { grid: { display: false } }
+                        y: { 
+                            beginAtZero: true, 
+                            max: 10, 
+                            ticks: { stepSize: 2 },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: { 
+                            grid: { display: false } 
+                        }
                     },
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { display: false } // Üstteki etiketi gizle
+                    }
                 }
             });
         }

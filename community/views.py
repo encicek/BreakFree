@@ -8,6 +8,7 @@ from .models import Post, Friendship
 from tracking.models import DependencyGoal, DailyLog
 from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
+import datetime
 
 @login_required
 def community_home(request):
@@ -82,7 +83,7 @@ def user_list(request):
         'search_query': search_query,
     })
 
-# --- PROFİL SİSTEMİ: TÜM HATALARI GİDERİLMİŞ VERSİYON ---
+# --- PROFİL SİSTEMİ: DASHBOARD VE AKTİF MÜCADELELERLE SENKRONİZE EDİLMİŞ VERSİYON ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
@@ -93,45 +94,77 @@ def user_profile(request, username):
     following_list = [rel.to_user for rel in following_relations]
     is_friend = Friendship.objects.filter(from_user=request.user, to_user=profile_user).exists()
 
-    # Aktif Bağımlılık Hedefleri (Sol Kolon)
-    active_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
+    # 🚨 DÜZENLEME: Aktif Mücadelelerin her biri için özel hesaplama yapıyoruz
+    raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
+    active_goals_with_stats = []
     
     # Başarı İstatistikleri İçin Varsayılan Değerler
-    clean_days = 0
+    main_streak = 0
+    monthly_clean_count = 0
+    success_rate = 0
     badges = []
     current_status = "Aktif"
     recent_logs = []
     friend_activities = []
 
-    if active_goals.exists():
-        # ANA HEDEF ANALİZİ: İlk hedef üzerinden temiz gün hesaplama
-        primary_goal = active_goals.first()
+    # Döngü ile her hedefin serisini (streak) hesaplayalım
+    for goal in raw_goals:
+        # Son bozma (relapse) kaydını bul
+        last_relapse = DailyLog.objects.filter(goal=goal, relapse=True).order_by('-date').first()
         
-        # Sadece 'Bozdum' işaretlenmemiş benzersiz tarihleri sayıyoruz
-        clean_days = DailyLog.objects.filter(
+        if last_relapse:
+            # Bozulma varsa, o tarihten sonrakileri say
+            streak = DailyLog.objects.filter(
+                goal=goal, relapse=False, date__gt=last_relapse.date
+            ).values('date').distinct().count()
+        else:
+            # Hiç bozulma yoksa hepsini say
+            streak = DailyLog.objects.filter(
+                goal=goal, relapse=False
+            ).values('date').distinct().count()
+
+        # Hedefe streak ve status bilgilerini dinamik ekleyelim
+        goal.streak = streak
+        
+        # Hedefin durumunu belirle (En son kayda bakarak)
+        last_log = DailyLog.objects.filter(goal=goal).order_by('-date').first()
+        goal.status = "Güçlü"
+        if last_log:
+            if last_log.relapse: goal.status = "Kriz Yaşadı"
+            elif last_log.craving_level >= 7: goal.status = "Zorlanıyor"
+            
+        active_goals_with_stats.append(goal)
+
+    # Genel istatistikler ve Dashboard senkronizasyonu (İlk hedef ana baz alınır)
+    if active_goals_with_stats:
+        primary_goal = active_goals_with_stats[0]
+        main_streak = primary_goal.streak
+        today = datetime.date.today()
+        start_of_month = today.replace(day=1)
+
+        # AYLIK BAŞARI: Dashboard ile aynı (Sadece bu ayın toplamı)
+        monthly_clean_count = DailyLog.objects.filter(
             goal=primary_goal, 
+            date__gte=start_of_month,
             relapse=False
-        ).values('date').distinct().count() 
+        ).values('date').distinct().count()
         
-        # SAĞ KOLON: Kullanıcının son 5 aktivite kaydı (En yeni üstte)
+        success_rate = int((monthly_clean_count / 30) * 100) if monthly_clean_count <= 30 else 100
+        
+        # SAĞ KOLON: Kullanıcının son 5 aktivite kaydı
         recent_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:5]
 
-        # ROZET MANTIĞI
-        if clean_days >= 1: badges.append({'name': 'İlk Adım', 'icon': '🥉'})
-        if clean_days >= 7: badges.append({'name': 'Savaşçı', 'icon': '🥈'})
-        if clean_days >= 30: badges.append({'name': 'Efendi', 'icon': '🥇'})
+        # ROZET MANTIĞI (Kesintisiz seriye göre)
+        if main_streak >= 1: badges.append({'name': 'İlk Adım', 'icon': '🥉'})
+        if main_streak >= 7: badges.append({'name': 'Savaşçı', 'icon': '🥈'})
+        if main_streak >= 30: badges.append({'name': 'Efendi', 'icon': '🥇'})
 
-        # ANLIK DURUM ANALİZİ
-        last_log = recent_logs.first()
-        if last_log:
-            if last_log.relapse: current_status = "Kriz Yaşadı"
-            elif last_log.craving_level >= 7: current_status = "Zorlanıyor"
-            else: current_status = "Güçlü"
+        # Genel Durum (Anlık)
+        current_status = primary_goal.status
 
-    # ARKADAŞ HABERLERİ: Sadece kendi profilindeyse haber akışını çek
+    # ARKADAŞ HABERLERİ
     if request.user == profile_user:
         my_follows = Friendship.objects.filter(from_user=request.user).values_list('to_user', flat=True)
-        # Yol arkadaşlarının son 10 başarısını getiriyoruz
         friend_activities = DailyLog.objects.filter(
             goal__user__in=my_follows
         ).order_by('-date')[:10]
@@ -140,8 +173,10 @@ def user_profile(request, username):
         'profile_user': profile_user,
         'posts': posts,
         'is_friend': is_friend,
-        'active_goals': active_goals,
-        'clean_days': clean_days,
+        'active_goals': active_goals_with_stats, # 🚨 Değişen liste
+        'clean_days': main_streak,      # Siyah Kart (Seri)
+        'monthly_count': monthly_clean_count, # Performans Barı
+        'success_rate': success_rate,
         'recent_logs': recent_logs,
         'following_list': following_list,
         'current_status': current_status,
