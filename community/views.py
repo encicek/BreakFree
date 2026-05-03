@@ -1,24 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from datetime import date, timedelta
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 
 from .models import Post, Friendship
+from tracking.models import DependencyGoal, DailyLog
+from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
-from tracking.models import DependencyGoal
 
+@login_required
 def community_home(request):
     posts = Post.objects.all().order_by('-created_at')
     
-    # AJAX isteği kontrolü
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('community/posts_list_partial.html', {'posts': posts})
         return HttpResponse(html)
         
     return render(request, 'community/community_home.html', {'posts': posts})
-
 
 @login_required
 def create_post(request):
@@ -32,7 +31,6 @@ def create_post(request):
     else:
         form = PostForm()
     return render(request, 'community/create_post.html', {'form': form})
-
 
 @login_required
 def post_detail(request, post_id):
@@ -66,112 +64,94 @@ def support_post(request, post_id):
 
 @login_required
 def user_list(request):
-    users = User.objects.exclude(id=request.user.id)
-    friends = Friendship.objects.filter(
+    search_query = request.GET.get('search')
+    
+    friend_ids = Friendship.objects.filter(
         from_user=request.user
     ).values_list('to_user_id', flat=True)
 
+    users_queryset = User.objects.exclude(id=request.user.id).exclude(id__in=friend_ids)
+
+    if search_query:
+        users = users_queryset.filter(username__icontains=search_query)
+    else:
+        users = users_queryset
+
     return render(request, 'community/user_list.html', {
         'users': users,
-        'friends': friends,
+        'search_query': search_query,
     })
 
-
+# --- PROFİL SİSTEMİ: TÜM HATALARI GİDERİLMİŞ VERSİYON ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     posts = Post.objects.filter(user=profile_user).order_by('-created_at')
 
-    # --- TAKİP SİSTEMİ VERİSİ ---
+    # Takip Kontrolü
     following_relations = Friendship.objects.filter(from_user=profile_user)
     following_list = [rel.to_user for rel in following_relations]
+    is_friend = Friendship.objects.filter(from_user=request.user, to_user=profile_user).exists()
 
-    is_friend = Friendship.objects.filter(
-        from_user=request.user,
-        to_user=profile_user
-    ).exists()
-
-    goal = DependencyGoal.objects.filter(
-        user=profile_user,
-        is_active=True
-    ).first()
-
-    # Varsayılan değerler
+    # Aktif Bağımlılık Hedefleri (Sol Kolon)
+    active_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
+    
+    # Başarı İstatistikleri İçin Varsayılan Değerler
     clean_days = 0
-    risk_level = None
-    recent_logs = None
-    monthly_success_rate = 0
-    monthly_total_logs = 0
-    monthly_relapses = 0
-    monthly_success_days = 0
-    weekly_activity = 0
-    current_status = "Bilinmiyor"
+    badges = []
+    current_status = "Aktif"
+    recent_logs = []
+    friend_activities = []
 
-    if goal:
-        # --- GÜN BAZLI HESAPLAMA (Karar Rehberi) ---
-        # Aynı gün girilen birden fazla başarılı kayıt tek bir gün sayılır.
-        clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
+    if active_goals.exists():
+        # ANA HEDEF ANALİZİ: İlk hedef üzerinden temiz gün hesaplama
+        primary_goal = active_goals.first()
+        
+        # Sadece 'Bozdum' işaretlenmemiş benzersiz tarihleri sayıyoruz
+        clean_days = DailyLog.objects.filter(
+            goal=primary_goal, 
+            relapse=False
+        ).values('date').distinct().count() 
+        
+        # SAĞ KOLON: Kullanıcının son 5 aktivite kaydı (En yeni üstte)
+        recent_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:5]
 
-        # --- HAFTALIK İSTİKRAR (Arkadaş Gözlemi İçin) ---
-        last_week = date.today() - timedelta(days=7)
-        weekly_activity = goal.logs.filter(date__gte=last_week).values('date').distinct().count()
+        # ROZET MANTIĞI
+        if clean_days >= 1: badges.append({'name': 'İlk Adım', 'icon': '🥉'})
+        if clean_days >= 7: badges.append({'name': 'Savaşçı', 'icon': '🥈'})
+        if clean_days >= 30: badges.append({'name': 'Efendi', 'icon': '🥇'})
 
-        # --- GÜNCEL DUYGU DURUMU ---
-        last_log = goal.logs.first() # ordering meta verisinden dolayı en sonuncuyu alır
+        # ANLIK DURUM ANALİZİ
+        last_log = recent_logs.first()
         if last_log:
-            if last_log.relapse:
-                current_status = "Kriz Yaşadı"
-            elif last_log.craving_level >= 7:
-                current_status = "Risk Altında"
-            elif last_log.craving_level >= 4:
-                current_status = "Zorlanıyor"
-            else:
-                current_status = "Güvende"
+            if last_log.relapse: current_status = "Kriz Yaşadı"
+            elif last_log.craving_level >= 7: current_status = "Zorlanıyor"
+            else: current_status = "Güçlü"
 
-        recent_logs = goal.logs.all().order_by('-date')[:5]
-
-        today = date.today()
-        monthly_logs = goal.logs.filter(
-            date__year=today.year,
-            date__month=today.month
-        )
-
-        monthly_total_logs = monthly_logs.count()
-        monthly_relapses = monthly_logs.filter(relapse=True).count()
-        monthly_success_days = monthly_total_logs - monthly_relapses
-
-        if monthly_total_logs > 0:
-            monthly_success_rate = round((monthly_success_days / monthly_total_logs) * 100)
-
-        if goal.initial_score >= 70:
-            risk_level = "Yüksek"
-        elif goal.initial_score >= 40:
-            risk_level = "Orta"
-        else:
-            risk_level = "Düşük"
+    # ARKADAŞ HABERLERİ: Sadece kendi profilindeyse haber akışını çek
+    if request.user == profile_user:
+        my_follows = Friendship.objects.filter(from_user=request.user).values_list('to_user', flat=True)
+        # Yol arkadaşlarının son 10 başarısını getiriyoruz
+        friend_activities = DailyLog.objects.filter(
+            goal__user__in=my_follows
+        ).order_by('-date')[:10]
 
     return render(request, 'community/user_profile.html', {
         'profile_user': profile_user,
         'posts': posts,
         'is_friend': is_friend,
-        'goal': goal,
+        'active_goals': active_goals,
         'clean_days': clean_days,
-        'risk_level': risk_level,
         'recent_logs': recent_logs,
-        'monthly_success_rate': monthly_success_rate,
-        'monthly_total_logs': monthly_total_logs,
-        'monthly_relapses': monthly_relapses,
-        'monthly_success_days': monthly_success_days,
         'following_list': following_list,
-        'weekly_activity': weekly_activity,
         'current_status': current_status,
+        'badges': badges,
+        'friend_activities': friend_activities,
     })
-
 
 @login_required
 def toggle_friend(request, user_id):
     to_user = get_object_or_404(User, id=user_id)
-    
     if to_user != request.user:
         friendship, created = Friendship.objects.get_or_create(
             from_user=request.user,
@@ -179,5 +159,18 @@ def toggle_friend(request, user_id):
         )
         if not created:
             friendship.delete()
-
     return redirect(request.META.get('HTTP_REFERER', 'community:user_profile'))
+
+@login_required
+def edit_profile(request, goal_id):
+    goal = get_object_or_404(DependencyGoal, id=goal_id, user=request.user)
+    
+    if request.method == 'POST':
+        form = GoalForm(request.POST, instance=goal)
+        if form.is_valid():
+            form.save()
+            return redirect('community:user_profile', username=request.user.username)
+    else:
+        form = GoalForm(instance=goal)
+    
+    return render(request, 'community/edit_profile.html', {'form': form})

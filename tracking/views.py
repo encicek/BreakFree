@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import DependencyGoal, DailyLog
 from .forms import GoalForm, DailyLogForm
 import datetime
 import json
 
-# 1. BİLİMSEL TEMELLİ ANKET SORULARI
+# 1. BİLİMSEL TEMELLİ ANKET SORULARI (Değişmedi)
 DEPENDENCY_SURVEYS = {
     'sigara': [
         {'id': 1, 'text': 'Günde ortalama kaç adet sigara tüketiyorsunuz?', 'choices': [('0', '10 veya daha az'), ('10', '11-20 adet'), ('20', '21-30 adet'), ('30', '31 ve üzeri')]},
@@ -24,7 +24,7 @@ DEPENDENCY_SURVEYS = {
     'ekran': [
         {'id': 1, 'text': 'Planladığınızdan daha uzun süre çevrimiçi kalıyor musunuz?', 'choices': [('20', 'Her zaman'), ('10', 'Sık sık'), ('0', 'Nadiren')]},
         {'id': 2, 'text': 'Çevrimiçi olmadığınızda huzursuz veya sinirli hissediyor musunuz?', 'choices': [('20', 'Evet, çok fazla'), ('10', 'Kısmen'), ('0', 'Hayır')]},
-        {'id': 3, 'text': 'İnternet kullanımı nedeniyle sosyal ilişkilerinizde sorun yaşadınız mı?', 'choices': [('20', 'Evet, ciddi'), ('5', 'Hafif'), ('0', 'Hayır')]},
+        {'id': 2, 'text': 'İnternet kullanımı nedeniyle sosyal ilişkilerinizde sorun yaşadınız mı?', 'choices': [('20', 'Evet, ciddi'), ('5', 'Hafif'), ('0', 'Hayır')]},
         {'id': 4, 'text': 'Stres veya çaresizlikten kaçmak için mi ekrana yöneliyorsunuz?', 'choices': [('20', 'Kesinlikle evet'), ('10', 'Bazen'), ('0', 'Hayır')]},
         {'id': 5, 'text': 'Ekranda geçirdiğiniz süreyi gizlemek için yalan söylüyor musunuz?', 'choices': [('20', 'Evet'), ('0', 'Hayır')]},
     ],
@@ -39,60 +39,65 @@ DEPENDENCY_SURVEYS = {
 # 2. AYLIk ANALİZ VE DASHBOARD
 @login_required(login_url='/accounts/login/')
 def dashboard(request):
-    goal = DependencyGoal.objects.filter(user=request.user, is_active=True).first()
+    all_active_goals = DependencyGoal.objects.filter(user=request.user, is_active=True)
+    existing_types = all_active_goals.values_list('dependency_type', flat=True)
+    
+    goal_id = request.GET.get('goal_id')
+    if goal_id:
+        goal = get_object_or_404(DependencyGoal, id=goal_id, user=request.user)
+    else:
+        goal = all_active_goals.order_by('-id').first()
     
     if goal:
         today = datetime.date.today()
+        yesterday = today - datetime.timedelta(days=1)
         start_of_month = today.replace(day=1)
         
-        # 1. Genel Seri (GÜNCELLEME: Aynı gün girilen çoklu kayıtları TEK gün sayar)
         total_clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
-        
-        # 2. Aylık Veriler (GÜNCELLEME: Aylık sayacı da benzersiz günlere göre güncelledik)
         current_month_logs = goal.logs.filter(date__gte=start_of_month)
         monthly_clean_unique = current_month_logs.filter(relapse=False).values('date').distinct().count()
-        
         display_monthly_count = monthly_clean_unique if monthly_clean_unique <= 30 else 30
         success_rate = int((display_monthly_count / 30) * 100)
 
-        # 3. Grafik Verisi (Son 30 kayıt - Burada tüm kayıtlar görünebilir, trend analizi için)
         last_logs = goal.logs.all().order_by('date')[:30]
         chart_labels = [log.date.strftime('%d %b') for log in last_logs]
         chart_data = [log.craving_level for log in last_logs]
 
-        # 4. PROFESYONEL ANALİZ VE RAPORLAMA MANTIĞI
+        has_entry_today = goal.logs.filter(date=today).exists()
+        has_entry_yesterday = goal.logs.filter(date=yesterday).exists()
+
         avg_craving = sum(chart_data) / len(chart_data) if chart_data else 0
         
         if success_rate >= 90:
             report_title = "Mükemmel İstikrar"
-            report_text = f"Bu ay %{success_rate} başarı oranıyla vücuduna harika bir hediye verdin. Hücrelerin yenileniyor ve iraden çelikleşiyor. 30 günün üzerinde temiz kalarak bağımlılığın nörolojik zincirlerini büyük oranda kırdın."
+            report_text = f"Bu ay %{success_rate} başarı oranıyla vücuduna harika bir hediye verdin."
             report_color = "success"
         elif success_rate >= 70:
             report_title = "Güçlü Gelişim"
-            report_text = f"Bu ay %{success_rate} oranında temiz kaldın. Bazı zor anların olsa da genel tabloda kazanan sensin. Ortalama zorlanma seviyen {avg_craving:.1f}/10. Bu, zihninin hala savaştığını ama pes etmediğini gösteriyor."
+            report_text = f"Bu ay %{success_rate} oranında temiz kaldın."
             report_color = "info"
         else:
             report_title = "Dikkat: Riskli Bölge"
-            report_text = f"Bu ayki %{success_rate} başarı oranı, tetikleyicilerin seni zorladığını gösteriyor. Kendine verdiğin zararı minimize etmek için notlarını incele ve seni neyin geriye ittiğini analiz et."
+            report_text = f"Bu ayki %{success_rate} başarı oranı tetikleyicilerin seni zorladığını gösteriyor."
             report_color = "warning"
 
-        # Risk Seviyesi (Anket bazlı)
         if goal.initial_score > 70: risk_level = "Yüksek"
         elif goal.initial_score > 35: risk_level = "Orta"
         else: risk_level = "Düşük"
 
         if request.method == 'POST':
-            log_form = DailyLogForm(request.POST)
+            log_form = DailyLogForm(request.POST, user=request.user)
             if log_form.is_valid():
                 log = log_form.save(commit=False)
-                log.goal = goal
                 log.save()
-                return redirect('tracking:dashboard')
+                return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}')
         else:
-            log_form = DailyLogForm()
+            log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
 
         context = {
             'goal': goal,
+            'all_active_goals': all_active_goals,
+            'existing_types': list(existing_types),
             'clean_days': total_clean_days,
             'success_rate': success_rate,
             'monthly_count': display_monthly_count,
@@ -105,10 +110,12 @@ def dashboard(request):
             'report_text': report_text,
             'report_color': report_color,
             'avg_craving': round(avg_craving, 1),
+            'has_entry_today': has_entry_today,
+            'has_entry_yesterday': has_entry_yesterday,
         }
         return render(request, 'tracking/dashboard.html', context)
     
-    return render(request, 'tracking/dashboard.html', {'goal': None})
+    return render(request, 'tracking/dashboard.html', {'goal': None, 'existing_types': list(existing_types)})
 
 # 3. ANKET SİSTEMİ
 @login_required(login_url='/accounts/login/')
@@ -128,12 +135,30 @@ def survey_view(request):
         return redirect('tracking:create_goal')
     return render(request, 'tracking/survey.html', {'questions': questions, 'type': dep_type})
 
-# 4. HEDEF OLUŞTURMA
+# 4. HEDEF OLUŞTURMA (GÜVENLİK VE AKIŞ KONTROLÜ)
 @login_required(login_url='/accounts/login/')
 def create_goal(request):
-    initial_score = request.session.get('calculated_score', 0)
-    chosen_type = request.session.get('chosen_type', 'sigara')
+    # 🚨 Session'da skor var mı kontrol et
+    initial_score = request.session.get('calculated_score')
+    chosen_type = request.session.get('chosen_type')
+
+    # 🚨 Skor yoksa kullanıcıyı seçim ekranına zorla gönder
+    if initial_score is None:
+        return redirect('/tracking/dashboard/?new_goal=true')
+    
+    existing_goal = DependencyGoal.objects.filter(user=request.user, dependency_type=chosen_type).first()
+
     if request.method == 'POST':
+        if existing_goal:
+            # Sadece geçerli bir skor varsa güncelle, yoksa eskiyi koru
+            if int(initial_score) > 0:
+                existing_goal.initial_score = int(initial_score)
+            existing_goal.is_active = True
+            existing_goal.save()
+            request.session.pop('calculated_score', None)
+            request.session.pop('chosen_type', None)
+            return redirect('tracking:dashboard')
+        
         form = GoalForm(request.POST)
         if form.is_valid():
             goal = form.save(commit=False)
@@ -145,5 +170,10 @@ def create_goal(request):
             request.session.pop('chosen_type', None)
             return redirect('tracking:dashboard')
     else:
-        form = GoalForm(initial={'dependency_type': chosen_type, 'initial_score': initial_score})
-    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score})
+        form = GoalForm(initial={'dependency_type': chosen_type})
+    
+    return render(request, 'tracking/create_goal.html', {
+        'form': form, 
+        'score': initial_score, 
+        'exists': existing_goal
+    })

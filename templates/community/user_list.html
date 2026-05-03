@@ -1,34 +1,100 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Arkadaş Bul</h1>
-    <p>Bu yolculukta yalnız değilsin; seninle aynı hedefi paylaşan topluluğa katıl</p>
-
-    {% for user in users %}
-        <div class="card mb-3">
-            <div class="card-body">
-                <h4>{{ user.username }}</h4>
-
-                <a href="{% url 'community:user_profile' username=user.username %}" class="btn btn-outline-primary btn-sm">
-                    Profil Görüntüle
-                </a>
-
-                {% if user.id in friends %}
-                    <!-- BURASI DÜZELDİ -->
-                    <a href="{% url 'community:toggle_friend' user_id=user.id %}" class="btn btn-danger btn-sm">
-                        Arkadaş Ekle
-                    </a>
-                {% else %}
-                    <!-- BURASI DA DÜZELDİ -->
-                    <a href="{% url 'community:toggle_friend' user_id=user.id %}" class="btn btn-success btn-sm">
-                        Arkadaş Çıkar
-                    </a>
-                {% endif %}
+<div class="container mt-5">
+    <!-- Başlık ve Açıklama -->
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-dark">Yol Arkadaşlarımı Keşfet</h1>
+        <p class="text-muted">Seninle aynı hedefe yürüyen yeni insanlarla tanış ve birbirinize güç verin.</p>
+        
+        <!-- Arama Çubuğu -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-md-6">
+                <form method="GET" action="" class="input-group mb-3 shadow-sm rounded-pill overflow-hidden">
+                    <input type="text" name="search" class="form-control border-0 px-4" placeholder="Yeni bir arkadaş ara..." value="{{ request.GET.search|default:'' }}">
+                    <button class="btn btn-primary px-4" type="submit">
+                        <i class="bi bi-search"></i> Ara
+                    </button>
+                </form>
             </div>
         </div>
-    {% empty %}
-        <p>No other users found.</p>
-    {% endfor %}
+    </div>
+
+    <div class="row">
+        {% for user in users %}
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100 shadow-sm border-0 user-card-hover" style="border-radius: 15px; overflow: hidden;">
+                    <!-- Üst Renkli Alan ve İkon -->
+                    <div class="text-center py-4 bg-primary bg-opacity-10">
+                        <div class="rounded-circle bg-white d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px;">
+                            <span class="display-6">👤</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body text-center p-4">
+                        <h5 class="fw-bold mb-1">{{ user.username|capfirst }}</h5>
+                        
+                        <!-- Başarı Serisi (Ateş İkonu) -->
+                        <div class="mb-3">
+                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 small">
+                                🔥 {{ user.goals.first.logs.filter.count|default:"0" }} Günlük Seri
+                            </span>
+                        </div>
+
+                        <!-- BİO KISMI -->
+                        <p class="text-muted small mb-4" style="min-height: 45px; line-height: 1.4;">
+                            {% if user.goals.first.bio %}
+                                "{{ user.goals.first.bio|truncatechars:60 }}"
+                            {% else %}
+                                <span class="fst-italic opacity-50">Henüz bir motivasyon notu eklenmemiş.</span>
+                            {% endif %}
+                        </p>
+
+                        <!-- Butonlar -->
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'community:user_profile' username=user.username %}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold">
+                                Profili Görüntüle
+                            </a>
+
+                            <!-- Sadece Arkadaş Ekle butonu; çünkü arkadaş oldukların listeden views tarafında elendi -->
+                            <a href="{% url 'community:toggle_friend' user_id=user.id %}" class="btn btn-success btn-sm rounded-pill fw-bold">
+                                <i class="bi bi-person-plus-fill"></i> Arkadaş Ekle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <!-- ARAMA SONUCU BULUNAMADI VEYA EKLEYECEK KİMSE KALMADI UYARISI -->
+            <div class="col-12 text-center py-5">
+                <div class="card shadow-sm border-0 p-5 bg-light mx-auto" style="border-radius: 20px; max-width: 600px;">
+                    {% if request.GET.search %}
+                        <div class="display-1 mb-3">🔍</div>
+                        <h3 class="fw-bold text-dark">"{{ request.GET.search }}" Bulunamadı</h3>
+                        <p class="text-muted">Aradığın kriterlere uygun veya henüz arkadaş olmadığın bir kullanıcı bulunamadı.</p>
+                        <div class="mt-4">
+                            <a href="{% url 'community:user_list' %}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                                Tüm Listeye Geri Dön
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="display-1 mb-3">✨</div>
+                        <h3 class="fw-bold text-dark">Keşfedecek Kimse Kalmadı!</h3>
+                        <p class="text-muted">Harikasın! Sistemdeki herkesle arkadaş oldun veya henüz yeni kayıtlı kullanıcı yok.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 </div>
+
+<style>
+    .user-card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .user-card-hover:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+</style>
 {% endblock %}

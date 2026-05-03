@@ -3,172 +3,169 @@
 {% block content %}
 <div class="container mt-5">
 
-    <!-- Profil Başlık Alanı -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body d-flex justify-content-between align-items-center">
+    <!-- 1. Profil Başlık Alanı -->
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body d-flex justify-content-between align-items-center p-4">
             <div>
-                <h2 class="mb-1">{{ profile_user.username }} Profil Gözlemi</h2>
+                <h2 class="mb-1 fw-bold text-dark">{{ profile_user.username|capfirst }} Profil Gözlemi</h2>
                 <p class="text-muted mb-0">
-                    Arkadaşının hedefini, ilerlemesini ve durumunu buradan takip edebilirsin.
+                    {% if request.user == profile_user %}
+                        Kendi gelişimini ve yol arkadaşlarının durumunu buradan yönetebilirsin.
+                    {% else %}
+                        Arkadaşının hedeflerini ve gelişimini buradan takip edebilirsin.
+                    {% endif %}
                 </p>
             </div>
 
             {% if profile_user != request.user %}
-                {% if is_friend %}
-                    <a href="{% url 'community:toggle_friend' user_id=profile_user.id %}" class="btn btn-danger shadow-sm">
-                        Arkadaşlıktan Çıkar
-                    </a>
-                {% else %}
-                    <a href="{% url 'community:toggle_friend' user_id=profile_user.id %}" class="btn btn-success shadow-sm">
-                        Arkadaş Ekle
-                    </a>
-                {% endif %}
+                <a href="{% url 'community:toggle_friend' user_id=profile_user.id %}" 
+                   class="btn {% if is_friend %}btn-danger{% else %}btn-success{% endif %} shadow-sm fw-bold rounded-pill px-4">
+                    {% if is_friend %}Arkadaşlıktan Çıkar{% else %}Arkadaş Ekle{% endif %}
+                </a>
             {% endif %}
         </div>
     </div>
 
-    {% if goal %}
+    {% if active_goals %}
         <div class="row">
+            <!-- SOL KOLON -->
             <div class="col-md-4">
-                <!-- Temiz Gün Sayısı (Karar Rehberi: Gün Bazlı) -->
-                <div class="card shadow-sm border-0 bg-dark text-white mb-4">
-                    <div class="card-body text-center p-4">
-                        <h6 class="text-uppercase mb-3 text-info">Toplam Başarı Serisi</h6>
-                        <h1 class="display-3 fw-bold">{{ clean_days }}</h1>
-                        <p class="mb-0 small opacity-75">
-                            {{ profile_user.username }} tam {{ clean_days }} gündür iradesini koruyor!
-                        </p>
-                    </div>
-                </div>
+                <h6 class="text-muted small text-uppercase mb-3 fw-bold"><i class="bi bi-target"></i> Aktif Mücadeleler</h6>
+                
+                {% for goal in active_goals %}
+                    <div class="card shadow-sm border-0 mb-3 border-start border-4 border-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-primary text-uppercase">{{ goal.get_dependency_type_display }}</h6>
+                                <span class="badge bg-light text-dark border small">{{ goal.initial_score }} Puan</span>
+                            </div>
+                            
+                            <div class="row g-0 text-center bg-light rounded p-2 mb-2">
+                                <div class="col-6 border-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">KAYITLI GÜN</small>
+                                    <span class="fw-bold text-success">{{ goal.logs.count }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">DURUM</small>
+                                    <span class="fw-bold text-primary" style="font-size: 0.8rem;">{{ current_status }}</span>
+                                </div>
+                            </div>
 
-                <!-- ARKADAŞ GÖZLEM PANELİ (Yeni Eklenen Kısım) -->
-                <div class="card shadow-sm border-0 mb-4 bg-light">
-                    <div class="card-body p-3">
-                        <h6 class="text-muted small text-uppercase mb-3 fw-bold">Sosyal Gözlem Özeti</h6>
-                        
-                        <!-- Haftalık İstikrar -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="small">Haftalık İstikrar:</span>
-                            <span class="badge bg-primary rounded-pill">{{ weekly_activity }} / 7 Gün</span>
-                        </div>
-
-                        <!-- Güncel Duygu Durumu -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="small">Duygu Durumu:</span>
-                            {% if current_status == "Güvende" %}
-                                <span class="badge bg-success">😊 Güvende</span>
-                            {% elif current_status == "Zorlanıyor" %}
-                                <span class="badge bg-warning text-dark">😟 Zorlanıyor</span>
-                            {% elif current_status == "Risk Altında" %}
-                                <span class="badge bg-danger">⚠️ Risk Altında</span>
-                            {% else %}
-                                <span class="badge bg-secondary">😶 Bilinmiyor</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Analiz Özeti -->
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body">
-                        <h5>Analiz Özeti</h5>
-                        <hr>
-                        <p class="mb-2"><strong>Bağımlılık:</strong> <span class="badge bg-primary">{{ goal.get_dependency_type_display }}</span></p>
-                        <p class="mb-2"><strong>Başlangıç:</strong> {{ goal.start_date }}</p>
-                        <p class="mb-2"><strong>Başlangıç Skoru:</strong> {{ goal.initial_score }}/100</p>
-                        <p class="mb-2">
-                            <strong>Risk Durumu:</strong>
-                            {% if risk_level == "Yüksek" %}
-                                <span class="text-danger fw-bold">Yüksek Risk</span>
-                            {% elif risk_level == "Orta" %}
-                                <span class="text-warning fw-bold">Orta Risk</span>
-                            {% else %}
-                                <span class="text-success fw-bold">Düşük Risk</span>
-                            {% endif %}
-                        </p>
-                        {% if goal.target_note %}
-                            <p class="mt-2 small text-muted italic">"{{ goal.target_note }}"</p>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Takip Edilen Arkadaşlar -->
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-primary text-white py-2">
-                        <h6 class="mb-0 small">Takip Edilen Arkadaşlar</h6>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                            {% for friend in following_list %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <a href="{% url 'community:user_profile' friend.username %}" class="text-decoration-none text-dark small fw-bold">
-                                        {{ friend.username }}
+                            {% if request.user == profile_user %}
+                                <div class="text-end">
+                                    <a href="{% url 'community:edit_profile' goal_id=goal.id %}" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-pencil-square"></i> Bu Hedefi Düzenle
                                     </a>
-                                    <span class="badge bg-light text-success border rounded-pill small">Aktif</span>
-                                </li>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+                {% if request.user == profile_user and active_goals.count < 4 %}
+                    <a href="{% url 'tracking:dashboard' %}?new_goal=true" class="btn btn-outline-primary btn-sm w-100 rounded-pill mb-4 shadow-sm fw-bold">
+                        <i class="bi bi-plus-circle"></i> Yeni Mücadele Ekle
+                    </a>
+                {% endif %}
+
+                <!-- ROZET ODASI -->
+                <div class="card shadow-sm border-0 mb-4 bg-white">
+                    <div class="card-body p-3">
+                        <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">Başarı Rozetleri</h6>
+                        <div class="d-flex flex-wrap gap-3 justify-content-center py-2">
+                            {% for badge in badges %}
+                                <div class="text-center">
+                                    <div class="fs-1">{{ badge.icon }}</div>
+                                    <div class="fw-bold small" style="font-size: 0.7rem;">{{ badge.name }}</div>
+                                </div>
                             {% empty %}
-                                <li class="list-group-item text-muted small text-center">Henüz kimse takip edilmiyor.</li>
+                                <p class="small text-muted fst-italic mb-0">Henüz rozet kazanılmadı.</p>
                             {% endfor %}
-                        </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- SAĞ KOLON -->
             <div class="col-md-8">
-                <!-- Bitiş Testi & Analizi (30 Gün Dolunca Çıkar) -->
-                {% if clean_days >= 30 %}
-                    <div class="alert alert-success shadow-sm border-0 p-4 mb-4">
-                        <h4 class="fw-bold">🏆 30 Günlük Süreç Tamamlandı!</h4>
-                        <p class="mb-0">Harika bir irade gösterdin. Alışkanlıkların değişmeye başladı.</p>
+                
+                <!-- 🚨 2. YOL ARKADAŞLARINDAN HABERLER (Sadece Kendi Profilinde Görünür) -->
+                {% if request.user == profile_user %}
+                <div class="card shadow-sm border-0 mb-4 border-start border-primary border-4">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-lightning-fill"></i> Yol Arkadaşlarından Haberler</h5>
                     </div>
-                {% endif %}
-
-                <!-- Son Kayıtlar -->
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white py-3">
-                        <h5 class="mb-0">Son Günlük Kayıtları</h5>
-                    </div>
-                    <div class="card-body">
-                        {% for log in recent_logs %}
-                            <div class="border-bottom py-2">
-                                <p class="mb-1 text-primary small"><strong>{{ log.date }}</strong></p>
-                                <p class="mb-1 small">Zorlanma Seviyesi: {{ log.craving_level }}/10</p>
-                                <p class="mb-1 small">
-                                    Durum: 
-                                    {% if log.relapse %}<span class="text-danger fw-bold">Bozuldu</span>
-                                    {% else %}<span class="text-success fw-bold">Temiz</span>{% endif %}
-                                </p>
-                            </div>
-                        {% empty %}
-                            <p class="text-muted mb-0">Henüz günlük kayıt yok.</p>
-                        {% endfor %}
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for act in friend_activities %}
+                                <div class="list-group-item p-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 fs-3 me-3">⭐</div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h6 class="mb-0 fw-bold text-dark">{{ act.goal.user.username|capfirst }}</h6>
+                                                <small class="text-muted">{{ act.date|date:"d M" }}</small>
+                                            </div>
+                                            <p class="mb-0 small text-success">
+                                                {{ act.goal.get_dependency_type_display }} mücadelesinde bir günü daha başarıyla tamamladı!
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="p-4 text-center text-muted">
+                                    <i class="bi bi-people mb-2 d-block fs-2 opacity-50"></i>
+                                    <p class="small mb-0">Henüz yol arkadaşlarınızdan bir haber yok.</p>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
+                {% endif %}
 
-                <!-- Paylaşımlar -->
+                <!-- 3. Son Kayıtlar -->
                 <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Topluluk Paylaşımları</h5>
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">Son Günlük Kayıtları</h5>
+                        <span class="badge bg-light text-dark border">Son 5 Kayıt</span>
                     </div>
-                    <div class="card-body">
-                        {% for post in posts %}
-                            <div class="border-bottom py-3">
-                                <h6 class="fw-bold">{{ post.title }}</h6>
-                                <p class="small text-muted">{{ post.content|truncatewords:20 }}</p>
-                                <a href="{% url 'community:post_detail' post_id=post.id %}" class="btn btn-link p-0 text-decoration-none small">Devamını Oku →</a>
+                    <div class="card-body p-0">
+                        {% for log in recent_logs %}
+                            <div class="d-flex justify-content-between align-items-center border-bottom p-3">
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge bg-primary me-2" style="font-size: 0.6rem;">{{ log.goal.get_dependency_type_display }}</span>
+                                        <p class="mb-0 text-dark small fw-bold">{{ log.date|date:"d F Y" }}</p>
+                                    </div>
+                                    <small class="text-muted">Zorlanma: {{ log.craving_level }}/10</small>
+                                    {% if log.daily_note %}
+                                        <p class="mb-0 text-dark small mt-1 opacity-75 fst-italic">"{{ log.daily_note }}"</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="badge {% if log.relapse %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-3 shadow-sm">
+                                        {% if log.relapse %}Bozuldu{% else %}Temiz{% endif %}
+                                    </span>
+                                </div>
                             </div>
                         {% empty %}
-                            <p class="text-muted small">Henüz paylaşım yapılmamış.</p>
+                            <div class="p-4 text-center text-muted italic">Henüz kayıt girilmemiş.</div>
                         {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
     {% else %}
-        <div class="alert alert-info shadow-sm">
-            Bu kullanıcının aktif bir takip hedefi henüz yok.
+        <!-- Boş Durum Analizi -->
+        <div class="alert alert-info shadow-sm border-0 p-5 text-center">
+            <i class="bi bi-info-circle display-4 d-block mb-3"></i>
+            <p class="mb-3 fw-bold fs-5">Henüz aktif bir mücadele hedefi bulunmuyor.</p>
+            {% if request.user == profile_user %}
+                <a href="{% url 'tracking:dashboard' %}?new_goal=true" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow">
+                    Hemen Bir Mücadele Başlat
+                </a>
+            {% endif %}
         </div>
     {% endif %}
-
 </div>
 {% endblock %}

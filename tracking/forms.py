@@ -4,20 +4,39 @@ from .models import DependencyGoal, DailyLog
 class GoalForm(forms.ModelForm):
     class Meta:
         model = DependencyGoal
-        fields = ['dependency_type', 'initial_score', 'target_note']
+        # initial_score'u mantıklı bulmadığın için çıkardık, bio eklendi.
+        fields = ['dependency_type', 'target_note', 'bio'] 
+        
         widgets = {
-            'dependency_type': forms.Select(attrs={'class': 'form-select'}),
-            'initial_score': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0-100 arası test skorunuz'}),
-            'target_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Kendinize bir motivasyon notu bırakın...'}),
+            'dependency_type': forms.Select(attrs={'class': 'form-select rounded-pill'}),
+            'target_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Seni ne motive eder?'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Yol arkadaşların seni tanısın...'}),
         }
 
 class DailyLogForm(forms.ModelForm):
     class Meta:
         model = DailyLog
-        fields = ['craving_level', 'relapse', 'trigger', 'daily_note']
+        # 'goal' alanını en başa ekledik ki kayıt hangi bağımlılığa gidecek seçilsin
+        fields = ['goal', 'date', 'craving_level', 'relapse', 'trigger', 'daily_note']
+        
         widgets = {
-            'craving_level': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 10}),
+            'goal': forms.Select(attrs={'class': 'form-select rounded-pill shadow-sm'}),
+            'date': forms.DateInput(attrs={'class': 'form-control rounded-pill', 'type': 'date'}),
+            'craving_level': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 10, 'placeholder': '1-10 arası'}),
             'relapse': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'trigger': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sizi ne tetikledi? (Örn: Stres)'}),
-            'daily_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'trigger': forms.TextInput(attrs={'class': 'form-control rounded-pill', 'placeholder': 'Tetikleyici (Örn: Stres)'}),
+            'daily_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Kısa bir not...'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        # View'dan gönderdiğimiz 'user' bilgisini burada yakalıyoruz
+        user = kwargs.pop('user', None)
+        super(DailyLogForm, self).__init__(*args, **kwargs)
+        
+        if user:
+            # 🚨 GÜVENLİK DÜZELTMESİ: 
+            # Veritabanındaki tüm hedefleri değil, SADECE bu kullanıcıya ait olanları çekiyoruz.
+            # Seda veya Kerem'in hedefleri artık senin listende görünmeyecek.
+            self.fields['goal'].queryset = DependencyGoal.objects.filter(user=user, is_active=True)
+            self.fields['goal'].empty_label = "Mücadele Seçin"
+            self.fields['goal'].label = "Kayıt Girilecek Mücadele"
