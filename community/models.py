@@ -1,24 +1,32 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
+# --- GÖNDERİ MODELİ ---
 class Post(models.Model):
     ADDICTION_CHOICES = [
-        ('smoking', 'Smoking'),
-        ('alcohol', 'Alcohol'),
-        ('gaming', 'Gaming'),
-        ('screen_time', 'Screen Time'),
-        ('general', 'General'),
+        ('ekran', 'Ekran Bağımlılığı'),
+        ('sigara', 'Sigara Bağımlılığı'),
+        ('alkol', 'Alkol Bağımlılığı'),
+        ('madde', 'Madde Bağımlılığı'),
+        ('general', 'Genel'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     content = models.TextField()
+    
+    is_anonymous = models.BooleanField(
+        default=False, 
+        verbose_name="Anonim Paylaş"
+    )
+    
     addiction_type = models.CharField(
         max_length=20,
         choices=ADDICTION_CHOICES,
-        default='general'
+        default='general',
+        verbose_name="Kategori"
     )
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def total_supports(self):
@@ -30,11 +38,11 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-
+# --- YORUM MODELİ ---
 class Comment(models.Model):
     post = models.ForeignKey(
-        Post,
-        on_delete=models.CASCADE,
+        Post, 
+        on_delete=models.CASCADE, 
         related_name='comments'
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -44,11 +52,11 @@ class Comment(models.Model):
     def __str__(self):
         return f"Comment by {self.user.username}"
 
-
+# --- DESTEK (LIKE) MODELİ ---
 class Support(models.Model):
     post = models.ForeignKey(
-        Post,
-        on_delete=models.CASCADE,
+        Post, 
+        on_delete=models.CASCADE, 
         related_name='supports'
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -60,16 +68,28 @@ class Support(models.Model):
     def __str__(self):
         return f"{self.user.username} supports {self.post.title}"
 
+# --- ARKADAŞLIK SİSTEMİ ---
 class Friendship(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Beklemede'),
+        ('accepted', 'Kabul Edildi'),
+    )
+    
     from_user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
+        User, 
+        on_delete=models.CASCADE, 
         related_name='friendships_sent'
     )
     to_user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
+        User, 
+        on_delete=models.CASCADE, 
         related_name='friendships_received'
+    )
+    # Varsayılan olarak beklemede başlar, kabul edilince 'accepted' olur
+    status = models.CharField(
+        max_length=10, 
+        choices=STATUS_CHOICES, 
+        default='pending'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -77,4 +97,73 @@ class Friendship(models.Model):
         unique_together = ('from_user', 'to_user')
 
     def __str__(self):
-        return f"{self.from_user.username} follows {self.to_user.username}"
+        return f"{self.from_user.username} -> {self.to_user.username} ({self.get_status_display()})"
+
+# --- BİLDİRİM SİSTEMİ ---
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('support', 'Destek'),
+        ('comment', 'Yorum'),
+        ('friend_request', 'Arkadaşlık İsteği'),
+    )
+    
+    recipient = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='notifications'
+    )
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    notification_type = models.CharField(
+        max_length=20, 
+        choices=NOTIFICATION_TYPES
+    )
+    # 🚨 KRİTİK DÜZENLEME: Arkadaşlık isteğinde bir post bağlı olmayacağı için
+    # bu alanın null ve boş bırakılabilir olması şarttır.
+    post = models.ForeignKey(
+        Post, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.sender.username} -> {self.recipient.username} ({self.notification_type})"
+
+# --- ŞİKAYET MODELİ ---
+class Report(models.Model):
+    REPORT_CHOICES = [
+        ('spam', 'Spam / Gereksiz'),
+        ('harassment', 'Taciz / Zorbalık'),
+        ('inappropriate', 'Uygunsuz İçerik'),
+        ('misleading', 'Yanıltıcı Bilgi'),
+        ('other', 'Diğer'),
+    ]
+
+    reporter = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='reports_made'
+    )
+    post = models.ForeignKey(
+        Post, 
+        on_delete=models.CASCADE, 
+        related_name='reports'
+    )
+    reason = models.CharField(
+        max_length=20, 
+        choices=REPORT_CHOICES
+    )
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_resolved = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Report on {self.post.title} by {self.reporter.username}"

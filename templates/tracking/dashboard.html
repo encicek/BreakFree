@@ -1,19 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<!-- Modern Uyarılar (SweetAlert2) Kütüphanesi -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="container mt-5">
     {% if goal and not request.GET.new_goal %}
-        <!-- ÜST BAR: ANALİZ EDİLEN HEDEF -->
+        <!-- 🚨 ÜST BAR: ANALİZ EDİLEN HEDEF -->
         <div class="card shadow-sm border-0 mb-4 bg-primary bg-opacity-10">
             <div class="card-body d-flex justify-content-between align-items-center py-2">
                 <span class="fw-bold text-primary small"><i class="bi bi-funnel-fill"></i> ANALİZ EDİLEN HEDEF:</span>
+                
                 <div class="dropdown">
-                    <button class="btn btn-white btn-sm dropdown-toggle fw-bold border shadow-sm" type="button" id="dropdownGoalMenu" data-bs-toggle="dropdown">
+                    <button class="btn btn-white btn-sm dropdown-toggle fw-bold border shadow-sm" type="button" id="dropdownGoalMenu" data-bs-toggle="dropdown" aria-expanded="false">
                         {{ goal.get_dependency_type_display }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end shadow border-0">
                         {% for g in all_active_goals %}
-                            <li><a class="dropdown-item small {% if g.id == goal.id %}active{% endif %}" href="?goal_id={{ g.id }}">{{ g.get_dependency_type_display }}</a></li>
+                            <li>
+                                <a class="dropdown-item small {% if g.id == goal.id %}active bg-primary{% endif %}" href="?goal_id={{ g.id }}&month={{ current_month }}">
+                                    {{ g.get_dependency_type_display }}
+                                </a>
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -31,15 +39,37 @@
                     </div>
                 </div>
 
+                <!-- 🚨 YENİ: BAŞARI ROZETLERİ ALANI -->
+                <div class="card shadow-sm border-0 mb-4 bg-white">
+                    <div class="card-body p-3">
+                        <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">
+                            <i class="bi bi-trophy-fill me-2 text-warning"></i>Başarı Rozetleri
+                        </h6>
+                        <div class="d-flex flex-wrap gap-3 justify-content-center py-2">
+                            {% for ub in user_badges %}
+                                <div class="text-center" title="{{ ub.badge.description }}" data-bs-toggle="tooltip">
+                                    <div class="fs-1">{{ ub.badge.image_name }}</div>
+                                    <div class="fw-bold small text-dark" style="font-size: 0.7rem;">{{ ub.badge.name }}</div>
+                                    <div class="text-muted" style="font-size: 0.6rem;">{{ ub.earned_at|date:"d M Y" }}</div>
+                                </div>
+                            {% empty %}
+                                <div class="text-center py-2 px-3">
+                                    <p class="small text-muted fst-italic mb-0">Henüz rozet kazanılmadı. 7 günlük temiz bir seri ile ilk rozetini alabilirsin!</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
-                        <h6 class="text-uppercase text-muted fw-bold mb-3 small">{{ current_month_name|upper }} AYI PERFORMANSI</h6>
+                        <h6 class="text-uppercase text-muted fw-bold mb-3 small">BU AYIN BAŞARI ORANI</h6>
                         <div class="progress mb-2" style="height: 12px; border-radius: 6px;">
-                            <div class="progress-bar bg-success" style="width: {{ success_rate }}%"></div>
+                            <div class="progress-bar bg-{{ report_color }}" style="width: {{ success_rate }}%"></div>
                         </div>
                         <div class="d-flex justify-content-between small mt-2">
-                            <span class="text-muted">Bu Ay: <strong>{{ monthly_count }} Gün</strong></span>
-                            <span class="text-muted border rounded px-1">Hedef: 30</span>
+                            <span class="text-muted">Başarı: <strong>%{{ success_rate }}</strong></span>
+                            <span class="text-muted border rounded px-1">Hedef: %100</span>
                         </div>
                     </div>
                 </div>
@@ -47,7 +77,7 @@
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
                         <p class="mb-1 small text-muted fw-bold text-uppercase">Bağımlılık: <span class="text-dark">{{ goal.get_dependency_type_display }}</span></p>
-                        <p class="mb-0 small text-muted fw-bold text-uppercase">Anket Riski: <span class="text-warning">{{ risk_level }}</span></p>
+                        <p class="mb-0 small text-muted fw-bold text-uppercase">Anket Riski: <span class="text-{{ report_color }}">{{ risk_level }}</span></p>
                         <hr class="my-2 opacity-50">
                         <div class="small text-muted fst-italic">Son verilere göre oluşturulan risk profilidir.</div>
                     </div>
@@ -59,23 +89,25 @@
                 <!-- AYLIK NAVİGASYON -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <a href="?goal_id={{ goal.id }}&month={{ prev_month }}" class="btn btn-sm btn-light border shadow-sm px-3">←</a>
-                    <h6 class="mb-0 fw-bold text-muted text-uppercase small">{{ current_month_name }} {{ current_year }} Raporu</h6>
+                    <h6 class="mb-0 fw-bold text-muted text-uppercase small">Aylık Gelişim Raporu</h6>
                     <a href="?goal_id={{ goal.id }}&month={{ next_month }}" class="btn btn-sm btn-light border shadow-sm px-3">→</a>
                 </div>
 
+                <!-- 🚨 DİNAMİK ANALİZ KARTI -->
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold">Profesyonel Durum Analizi</h5>
+                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-cpu me-2"></i>Profesyonel Durum Analizi</h5>
                         <span class="badge bg-{{ report_color }} text-uppercase" style="font-size: 0.65rem;">{{ report_title }}</span>
                     </div>
                     <div class="card-body p-4">
-                        <p class="fs-6 border-start border-4 border-{{ report_color }} ps-3 text-muted fst-italic">"{{ report_text }}"</p>
+                        <p class="fs-5 border-start border-4 border-{{ report_color }} ps-3 text-muted fst-italic" style="line-height: 1.6;">
+                            "{{ report_text }}"
+                        </p>
                         
-                        <!-- ÖZET İSTATİSTİKLER -->
                         <div class="row text-center mb-4 g-0 border rounded py-3 bg-light bg-opacity-50">
                             <div class="col-6 border-end">
                                 <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.6rem;">AYLIK ORT. ZORLANMA</small>
-                                <h4 class="fw-bold mb-0">{{ avg_craving }} / 10</h4>
+                                <h4 class="fw-bold mb-0 text-dark">{{ avg_craving }} / 10</h4>
                             </div>
                             <div class="col-6">
                                 <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.6rem;">BİYOLOJİK DURUM</small>
@@ -88,41 +120,65 @@
                     </div>
                 </div>
 
-                <!-- VERİ GİRİŞ FORMU (Alt Kısım) -->
-                <div class="card shadow-sm border-0 border-top border-primary border-4">
+                <!-- VERİ GİRİŞ FORMU -->
+                <div class="card shadow-sm border-0 border-top border-primary border-4 rounded-4">
                     <div class="card-body p-4">
-                        <h5 class="fw-bold mb-4 text-primary">Bugünkü Durumunu Kaydet</h5>
+                        <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-plus-circle-fill me-2"></i>Bugünkü Durumunu Kaydet</h5>
                         <form method="POST">
                             {% csrf_token %}
                             <div class="row g-3">
-                                <div class="col-12">{{ log_form.goal }}</div>
-                                <div class="col-md-6">{{ log_form.date }}</div>
-                                <div class="col-md-6">{{ log_form.craving_level }}</div>
+                                <div class="col-12" style="display:none;">{{ log_form.goal }}</div>
+                                
+                                <div class="col-md-6">
+                                    <label class="small fw-bold text-muted mb-1">Tarih</label>
+                                    {{ log_form.date }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small fw-bold text-muted mb-1">Zorlanma Seviyesi (1-10)</label>
+                                    {{ log_form.craving_level }}
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">Süreci Ne Tetikledi? (Trigger)</label>
+                                    {{ log_form.trigger }}
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">Günlük Not</label>
+                                    {{ log_form.daily_note }}
+                                </div>
+
                                 <div class="col-12 text-center py-2">
                                     <div class="form-check form-switch d-inline-block">
-                                        {{ log_form.relapse }}<label class="ms-2 fw-bold text-danger small">Bozdum (Relapse)</label>
+                                        {{ log_form.relapse }}
+                                        <label class="ms-2 fw-bold text-danger small">Bozdum (Relapse)</label>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow">VERİYİ KAYDET</button>
+                                
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow">VERİYİ KAYDET</button>
+                                </div>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-clipboard2-plus display-1 text-muted opacity-25"></i>
+            <h4 class="mt-3 text-muted">Henüz aktif bir takibiniz bulunmuyor.</h4>
+            <a href="?new_goal=true" class="btn btn-primary rounded-pill px-5 mt-3">Yeni Hedef Başlat</a>
+        </div>
     {% endif %}
 </div>
 
-<!-- SCRIPTS: Chart.js ve Grafik Mantığı aynı kalıyor -->
- <!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const chartElement = document.getElementById('cravingChart');
         if (chartElement) {
-            // Backend'den gelen JSON verilerini JavaScript dizisine çeviriyoruz
             const labels = {{ chart_labels|safe }};
             const data = {{ chart_data|safe }};
             
@@ -133,9 +189,9 @@
                     datasets: [{
                         label: 'Zorlanma Seviyesi',
                         data: data.length ? data : [0],
-                        borderColor: '#0d6efd', // Mavi çizgi
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)', // Çizgi altı hafif dolgu
-                        tension: 0.4, // Çizginin kavisli durması için
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.4,
                         fill: true,
                         pointRadius: 5,
                         pointBackgroundColor: '#0d6efd',
@@ -145,23 +201,20 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
-                            max: 10, 
-                            ticks: { stepSize: 2 },
-                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                        },
-                        x: { 
-                            grid: { display: false } 
-                        }
+                    scales: {
+                        y: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } },
+                        x: { grid: { display: false } }
                     },
-                    plugins: { 
-                        legend: { display: false } // Üstteki etiketi gizle
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         }
     });
 </script>
+
+<style>
+    .bg-info { background-color: #0dcaf0 !important; }
+    .border-info { border-color: #0dcaf0 !important; }
+    .text-info { color: #0dcaf0 !important; }
+</style>
 {% endblock %}

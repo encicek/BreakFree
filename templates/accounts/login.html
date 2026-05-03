@@ -1,33 +1,70 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 400px;">
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4 text-center">
-            <h2 class="mb-4">Giriş Yap</h2>
-
-            <!-- Standart Kullanıcı Giriş Formu -->
-            <form method="POST">
-                {% csrf_token %}
-                <div class="text-start mb-3">
-                    {{ form.as_p }}
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2">Kullanıcı Girişi</button>
-            </form>
-
-            <div class="mt-4">
-                <p class="mb-1 text-muted small">Hesabınız yok mu?</p>
-                <a href="{% url 'register' %}" class="btn btn-outline-success btn-sm w-100">Yeni Kayıt Oluştur</a>
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <!-- Dekoratif Üst Bar -->
+            <div class="bg-success py-3 text-center">
+                <i class="bi bi-shield-lock-fill fs-1 text-white"></i>
             </div>
+            
+            <div class="card-body p-4 p-md-5">
+                <h2 class="text-center fw-bold mb-4">Giriş Yap</h2>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Kullanıcı Adı -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small">Kullanıcı Adı</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary"><i class="bi bi-person"></i></span>
+                            <input type="text" name="username" class="form-control border-start-0 bg-light" 
+                                   placeholder="Kullanıcı adınız" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Parola -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-secondary small">Parola</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-secondary"><i class="bi bi-key"></i></span>
+                            <input type="password" name="password" class="form-control border-start-0 bg-light" 
+                                   placeholder="Parolanız" required>
+                        </div>
+                    </div>
+                    
+                    <!-- Giriş Butonu -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success rounded-pill fw-bold py-2 shadow-sm">
+                            Kullanıcı Girişi
+                        </button>
+                    </div>
+                </form>
 
-            <hr class="my-4">
+                <div class="text-center mt-4">
+                    <p class="text-muted small mb-2">Hesabınız yok mu?</p>
+                    <a href="{% url 'register' %}" class="btn btn-outline-success btn-sm rounded-pill px-4 fw-bold">
+                        Yeni Kayıt Oluştur
+                    </a>
+                </div>
 
-            <!-- Yönetici Paneli Girişi -->
-            <div>
-                <p class="mb-1 text-muted small">Sistem yöneticisi misiniz?</p>
-                <a href="/admin/" class="btn btn-dark btn-sm w-100">Yönetici (Admin) Girişi</a>
+                <hr class="my-4 opacity-25">
+
+                <div class="text-center">
+                    <a href="/admin" class="text-decoration-none text-muted extra-small">
+                        <i class="bi bi-gear-fill me-1"></i> Yönetici Girişi
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .extra-small { font-size: 0.75rem; }
+    .card { transition: transform 0.3s ease; }
+    .card:hover { transform: translateY(-5px); }
+</style>
 {% endblock %}

@@ -1,30 +1,110 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Create Post</h1>
-    <p>Share your experience with the community.</p>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Geri Dön Butonu -->
+            <a href="{% url 'community:community_home' %}" class="btn btn-link text-decoration-none text-muted mb-3 p-0">
+                <i class="bi bi-arrow-left"></i> Topluluğa Geri Dön
+            </a>
 
-    <form method="POST">
-        {% csrf_token %}
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="bi bi-chat-quote-fill fs-3"></i>
+                        </div>
+                        <h2 class="fw-bold">Deneyimini Paylaş</h2>
+                        <p class="text-muted">Başarılarını veya zorluklarını anlatarak topluluğa ilham ol.</p>
+                    </div>
 
-        <div class="mb-3">
-            {{ form.title.label_tag }}
-            {{ form.title }}
+                    <form method="POST" class="needs-validation">
+                        {% csrf_token %}
+
+                        <!-- Başlık -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase" style="letter-spacing: 1px;">Konu Başlığı</label>
+                            <div class="input-group border rounded-3 overflow-hidden transition-focus">
+                                <span class="input-group-text bg-white border-0"><i class="bi bi-type-h1 text-muted"></i></span>
+                                {{ form.title }}
+                            </div>
+                            {% if form.title.errors %}
+                                <div class="text-danger small mt-1">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Kategori Seçimi -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase" style="letter-spacing: 1px;">Mücadele Kategorisi</label>
+                            <div class="input-group border rounded-3 overflow-hidden transition-focus">
+                                <span class="input-group-text bg-white border-0"><i class="bi bi-tags text-muted"></i></span>
+                                {{ form.addiction_type }}
+                            </div>
+                        </div>
+
+                        <!-- İçerik -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase" style="letter-spacing: 1px;">Mesajın</label>
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                                <div class="text-danger small mt-1">{{ form.content.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 🚨 YENİ: ANONİM PAYLAŞIM SWİTCH -->
+                        <div class="card bg-light border-0 rounded-3 mb-4">
+                            <div class="card-body d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <h6 class="mb-0 fw-bold small">Anonim Olarak Paylaş</h6>
+                                    <small class="text-muted" style="font-size: 0.75rem;">İsmin gizli tutulur, sadece "Anonim Savaşçı" olarak görünürsün.</small>
+                                </div>
+                                <div class="form-check form-switch fs-5">
+                                    {{ form.is_anonymous }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Butonlar -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-3 fw-bold rounded-pill shadow-sm">
+                                <i class="bi bi-send-fill me-2"></i> PAYLAŞIMI YAYINLA
+                            </button>
+                            <a href="{% url 'community:community_home' %}" class="btn btn-light py-2 fw-bold rounded-pill text-muted">Vazgeç</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bilgi Notu -->
+            <div class="text-center mt-4 text-muted small">
+                <i class="bi bi-shield-check"></i> Paylaşımların topluluk kurallarına uygun olmalıdır.
+            </div>
         </div>
-
-        <div class="mb-3">
-            {{ form.content.label_tag }}
-            {{ form.content }}
-        </div>
-
-        <div class="mb-3">
-            {{ form.addiction_type.label_tag }}
-            {{ form.addiction_type }}
-        </div>
-
-        <button type="submit" class="btn btn-primary">Share</button>
-        <a href="{% url 'community:community_home' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+    </div>
 </div>
+
+<style>
+    /* Form elemanlarını güzelleştirmek için minik dokunuşlar */
+    input, select, textarea {
+        border: none !important;
+        padding: 12px !important;
+    }
+    textarea {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 12px !important;
+        min-height: 150px;
+    }
+    .transition-focus {
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .transition-focus:focus-within {
+        border-color: #0d6efd !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+</style>
 {% endblock %}

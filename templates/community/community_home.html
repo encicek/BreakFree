@@ -1,39 +1,126 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Topluluk</h1>
-    <p>Gelişimini paylaş ve diğerlerini destekle.</p>
+<div class="container mt-5">
+    <div class="row">
+        <!-- SOL KOLON: Kategori Filtreleri -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 text-uppercase small text-primary"><i class="bi bi-filter-circle"></i> Kategoriler</h6>
+                    <div class="list-group list-group-flush">
+                        <a href="?category=all" class="list-group-item list-group-item-action border-0 px-0 d-flex justify-content-between align-items-center {% if not current_category or current_category == 'all' %}fw-bold text-primary{% endif %}">
+                            <span>🌍 Tüm Paylaşımlar</span>
+                        </a>
+                        <a href="?category=ekran" class="list-group-item list-group-item-action border-0 px-0 d-flex justify-content-between align-items-center {% if current_category == 'ekran' %}fw-bold text-primary{% endif %}">
+                            <span>📱 Ekran Bağımlılığı</span>
+                        </a>
+                        <a href="?category=sigara" class="list-group-item list-group-item-action border-0 px-0 d-flex justify-content-between align-items-center {% if current_category == 'sigara' %}fw-bold text-primary{% endif %}">
+                            <span>🚬 Sigara Bağımlılığı</span>
+                        </a>
+                        <a href="?category=alkol" class="list-group-item list-group-item-action border-0 px-0 d-flex justify-content-between align-items-center {% if current_category == 'alkol' %}fw-bold text-primary{% endif %}">
+                            <span>🍷 Alkol Bağımlılığı</span>
+                        </a>
+                        <a href="?category=madde" class="list-group-item list-group-item-action border-0 px-0 d-flex justify-content-between align-items-center {% if current_category == 'madde' %}fw-bold text-primary{% endif %}">
+                            <span>💊 Madde Bağımlılığı</span>
+                        </a>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="mb-3">
-        <a href="{% url 'community:create_post' %}" class="btn btn-primary">
-            Post Oluştur
-        </a>
-        <!-- "Find Friends" butonu buradan kaldırıldı (İstek 2) -->
-    </div>
+        <!-- SAĞ KOLON: Feed -->
+        <div class="col-md-9">
+            
+            <!-- Üst Alan: Arama ve Paylaşma Alanı -->
+            <div class="row mb-4">
+                <div class="col-12 mb-3">
+                    <form method="GET" action="{% url 'community:community_home' %}">
+                        <div class="input-group shadow-sm rounded-pill bg-white overflow-hidden border p-1">
+                            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="q" class="form-control border-0 shadow-none" placeholder="Topluluk içinde deneyim veya başlık ara..." value="{{ request.GET.q|default:'' }}">
+                            <button class="btn btn-primary rounded-pill px-4 ms-2" type="submit">Ara</button>
+                            {% if current_category %}
+                                <input type="hidden" name="category" value="{{ current_category }}">
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
 
-    <!-- Postların geleceği konteyner -->
-    <div id="post-container">
-        {% include 'community/posts_list_partial.html' %}
+                <div class="col-12 text-end">
+                    <a href="{% url 'community:create_post' %}" class="btn btn-success rounded-pill px-5 fw-bold shadow-sm py-2">
+                        <i class="bi bi-plus-lg me-2"></i> Yeni Bir Deneyim Paylaş
+                    </a>
+                </div>
+            </div>
+
+            <!-- Dinamik Post Konteyneri -->
+            <div id="post-container">
+                {% if posts %}
+                    {% for post in posts %}
+                        <div class="card shadow-sm border-0 mb-4 rounded-4 transition-hover">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold me-3 shadow-sm" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                                            {% if post.is_anonymous %}<i class="bi bi-incognito"></i>{% else %}{{ post.user.username|slice:":1"|upper }}{% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{% if post.is_anonymous %}Anonim Kişi{% else %}{{ post.user.username|capfirst }}{% endif %}</h6>
+                                            <small class="text-muted"><i class="bi bi-clock"></i> {{ post.created_at|timesince }} önce</small>
+                                        </div>
+                                    </div>
+                                    <!-- 🚨 DÜZELTME: get_addiction_type_display sayesinde 'general' -> 'Genel Bağımlılık Deneyimleri' olacak -->
+                                    <span class="badge bg-light text-primary border rounded-pill px-3 py-2 small">
+                                        {{ post.get_addiction_type_display }}
+                                    </span>
+                                </div>
+                                <h5 class="fw-bold mb-2">{{ post.title }}</h5>
+                                <p class="text-secondary mb-4" style="line-height: 1.7;">{{ post.content|truncatewords:50 }}</p>
+                                <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                                    <div class="d-flex gap-4">
+                                        <a href="{% url 'community:support_post' post.id %}" class="text-decoration-none text-danger fw-bold small d-flex align-items-center">
+                                            <i class="bi bi-heart-fill me-1"></i> Destekle ({{ post.total_supports }})
+                                        </a>
+                                        <a href="{% url 'community:post_detail' post.id %}" class="text-decoration-none text-muted fw-bold small d-flex align-items-center">
+                                            <i class="bi bi-chat-left-text-fill me-1"></i> Yorumlar ({{ post.total_comments }})
+                                        </a>
+                                    </div>
+                                    <a href="{% url 'community:post_detail' post.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-4 fw-bold">Detaylar</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5 bg-white rounded-4 shadow-sm">
+                        <i class="bi bi-chat-dots display-1 text-muted opacity-25"></i>
+                        <p class="mt-3 text-muted fw-bold">Aradığın kriterlere uygun paylaşım bulunamadı.</p>
+                        <a href="?category=all" class="btn btn-link text-decoration-none">Tüm paylaşımlara geri dön</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Otomatik Güncelleme Scripti (İstek 1) -->
+<style>
+    .transition-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .transition-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important; }
+    .btn-success { background-color: #28a745; border-color: #28a745; color: white; }
+    .btn-success:hover { background-color: #218838; border-color: #1e7e34; color: white; }
+</style>
+
 <script>
     function fetchPosts() {
-        fetch("{% url 'community:community_home' %}", {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
+        const urlParams = new URLSearchParams(window.location.search);
+        let fetchUrl = "{% url 'community:community_home' %}";
+        if (urlParams.toString()) { fetchUrl += "?" + urlParams.toString(); }
+        fetch(fetchUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(response => response.text())
-        .then(html => {
-            document.getElementById('post-container').innerHTML = html;
-        })
-        .catch(err => console.warn('Güncelleme sırasında hata oluştu:', err));
+        .then(html => { document.getElementById('post-container').innerHTML = html; })
+        .catch(err => console.warn('Güncelleme hatası:', err));
     }
-
-    // Her 5 saniyede bir fetchPosts fonksiyonunu çalıştır (5000 milisaniye)
-    setInterval(fetchPosts, 5000);
+    setInterval(fetchPosts, 10000);
 </script>
 {% endblock %}

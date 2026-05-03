@@ -3,23 +3,181 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.http import HttpResponse
-
-from .models import Post, Friendship
-from tracking.models import DependencyGoal, DailyLog
+from django.db.models import Q 
+from django.core.paginator import Paginator 
+from .models import Post, Friendship, Notification, Report 
+from tracking.models import DependencyGoal, DailyLog 
 from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
 import datetime
+import json 
 
+# --- TOPLULUK ANA SAYFASI ---
 @login_required
 def community_home(request):
-    posts = Post.objects.all().order_by('-created_at')
-    
+    query = request.GET.get('q', '').strip() 
+    category_filter = request.GET.get('category') 
+    posts_list = Post.objects.all().order_by('-created_at')
+    if query:
+        posts_list = posts_list.filter(Q(title__icontains=query) | Q(content__icontains=query) | Q(user__username__icontains=query))
+    if category_filter and category_filter != 'all':
+        posts_list = posts_list.filter(addiction_type=category_filter)
+    paginator = Paginator(posts_list, 10) 
+    posts = paginator.get_page(request.GET.get('page'))
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('community/posts_list_partial.html', {'posts': posts})
         return HttpResponse(html)
-        
-    return render(request, 'community/community_home.html', {'posts': posts})
+    return render(request, 'community/community_home.html', {'posts': posts, 'current_category': category_filter, 'query': query})
 
+# --- PROFİL SİSTEMİ (Onaylı Arkadaşlık, Tekil Liste & 10 Günlük Grafik) ---
+@login_required
+def user_profile(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(user=profile_user).order_by('-created_at')
+
+    # Hedef İstatistiklerini Hesapla
+    raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
+    active_goals_with_stats = []
+    for goal in raw_goals:
+        last_relapse = DailyLog.objects.filter(goal=goal, relapse=True).order_by('-date').first()
+        streak = DailyLog.objects.filter(goal=goal, relapse=False, date__gt=last_relapse.date).values('date').distinct().count() if last_relapse else DailyLog.objects.filter(goal=goal, relapse=False).values('date').distinct().count()
+        last_log = DailyLog.objects.filter(goal=goal).order_by('-date').first()
+        status = "Güçlü"
+        if last_log:
+            if last_log.relapse: status = "Kriz Yaşadı"
+            elif last_log.craving_level >= 7: status = "Zorlanıyor"
+        goal.streak = streak
+        goal.status = status
+        active_goals_with_stats.append(goal)
+
+    # Arkadaşlık Durumu Kontrolü (Görüntüleyen ve Profil Sahibi Arasında)
+    sent_req = Friendship.objects.filter(from_user=request.user, to_user=profile_user).first()
+    received_req = Friendship.objects.filter(from_user=profile_user, to_user=request.user).first()
+    
+    status_label = "none"
+    if sent_req:
+        status_label = "friends" if sent_req.status == 'accepted' else "sent"
+    elif received_req:
+        status_label = "friends" if received_req.status == 'accepted' else "received"
+
+    # TEKİL LİSTELEME: Arkadaş listesinde mükerrer kaydı engeller
+    friendships = Friendship.objects.filter(
+        Q(from_user=profile_user, status='accepted') | 
+        Q(to_user=profile_user, status='accepted')
+    ).select_related('from_user', 'to_user')
+
+    friends_set = set()
+    for f in friendships:
+        if f.from_user == profile_user:
+            friends_set.add(f.to_user)
+        else:
+            friends_set.add(f.from_user)
+    
+    friend_list = list(friends_set)
+
+    # GRAFİK VERİSİ: Son 10 Kaydı Çek ve Zaman Sırasına Koy
+    ten_days_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:10]
+    ten_days_logs = sorted(ten_days_logs, key=lambda x: x.date) 
+    
+    chart_labels = [log.date.strftime("%d %b") for log in ten_days_logs]
+    chart_data = [log.craving_level for log in ten_days_logs]
+
+    # Sayfalamalı Yol Arkadaşı Haberleri (Sadece Kendi Profilinde)
+    friend_activities_list = []
+    if request.user == profile_user:
+        my_friends_ids = [u.id for u in friend_list]
+        friend_activities_list = DailyLog.objects.filter(goal__user__in=my_friends_ids, relapse=False).order_by('-date')
+    
+    paginator = Paginator(friend_activities_list, 5)
+    friend_activities = paginator.get_page(request.GET.get('friend_page'))
+
+    recent_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:5]
+
+    return render(request, 'community/user_profile.html', {
+        'profile_user': profile_user,
+        'posts': posts,
+        'active_goals': active_goals_with_stats,
+        'status_label': status_label,
+        'friend_list': friend_list,
+        'friend_activities': friend_activities,
+        'recent_logs': recent_logs,
+        'chart_labels': json.dumps(chart_labels), 
+        'chart_data': json.dumps(chart_data),     
+    })
+
+# --- ARKADAŞLIK İŞLEMLERİ ---
+@login_required
+def send_friend_request(request, user_id):
+    to_user = get_object_or_404(User, id=user_id)
+    if to_user != request.user:
+        exists = Friendship.objects.filter(
+            Q(from_user=request.user, to_user=to_user) | 
+            Q(from_user=to_user, to_user=request.user)
+        ).exists()
+        
+        if not exists:
+            Friendship.objects.create(from_user=request.user, to_user=to_user, status='pending')
+            Notification.objects.create(
+                recipient=to_user, sender=request.user, 
+                notification_type='friend_request', post=None  
+            )
+    return redirect('community:user_profile', username=to_user.username)
+
+@login_required
+def accept_friend_request(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    sender = notification.sender
+    # Tek satır üzerinden onaylama
+    friendship = Friendship.objects.filter(from_user=sender, to_user=request.user, status='pending').first()
+    if friendship:
+        friendship.status = 'accepted'
+        friendship.save()
+    notification.delete()
+    return redirect('community:notifications')
+
+@login_required
+def reject_friend_request(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    Friendship.objects.filter(from_user=notification.sender, to_user=request.user, status='pending').delete()
+    notification.delete()
+    return redirect('community:notifications')
+
+@login_required
+def remove_friend(request, user_id):
+    target_user = get_object_or_404(User, id=user_id)
+    Friendship.objects.filter(
+        Q(from_user=request.user, to_user=target_user) | 
+        Q(from_user=target_user, to_user=request.user)
+    ).delete()
+    return redirect('community:user_profile', username=target_user.username)
+
+# --- BİLDİRİMLER & KEŞFET ---
+@login_required
+def notifications(request):
+    user_notifications = request.user.notifications.all().order_by('-created_at')
+    user_notifications.exclude(notification_type='friend_request').update(is_read=True)
+    return render(request, 'community/notifications.html', {'notifications': user_notifications})
+
+@login_required
+def user_list(request):
+    search_query = request.GET.get('search', '').strip()
+    friends_relations = Friendship.objects.filter(
+        Q(from_user=request.user) | Q(to_user=request.user)
+    ).values_list('from_user_id', 'to_user_id')
+
+    exclude_ids = {request.user.id}
+    for f_id, t_id in friends_relations:
+        exclude_ids.add(f_id)
+        exclude_ids.add(t_id)
+
+    users_queryset = User.objects.exclude(id__in=exclude_ids)
+    if search_query:
+        users = users_queryset.filter(username__icontains=search_query)
+    else:
+        users = users_queryset
+    return render(request, 'community/user_list.html', {'users': users, 'search_query': search_query})
+
+# --- STANDART İŞLEMLER (POST, DETAIL, SUPPORT, REPORT, EDIT) ---
 @login_required
 def create_post(request):
     if request.method == 'POST':
@@ -37,7 +195,7 @@ def create_post(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all().order_by('-created_at')
-
+    is_supported = post.supports.filter(request.user).exists() if hasattr(post, 'supports') else False
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
         if comment_form.is_valid():
@@ -45,161 +203,36 @@ def post_detail(request, post_id):
             comment.post = post
             comment.user = request.user
             comment.save()
+            if post.user != request.user: 
+                Notification.objects.create(recipient=post.user, sender=request.user, notification_type='comment', post=post)
             return redirect('community:post_detail', post_id=post.id)
     else:
         comment_form = CommentForm()
-
-    return render(request, 'community/post_detail.html', {
-        'post': post,
-        'comments': comments,
-        'comment_form': comment_form,
-    })
+    return render(request, 'community/post_detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form, 'is_supported': is_supported})
 
 @login_required
 def support_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     support, created = post.supports.get_or_create(user=request.user)
-    if not created:
+    if created and post.user != request.user:
+        Notification.objects.create(recipient=post.user, sender=request.user, notification_type='support', post=post)
+    elif not created:
         support.delete()
-    return redirect('community:post_detail', post_id=post.id)
+    return redirect(request.META.get('HTTP_REFERER', 'community:community_home'))
 
 @login_required
-def user_list(request):
-    search_query = request.GET.get('search')
-    
-    friend_ids = Friendship.objects.filter(
-        from_user=request.user
-    ).values_list('to_user_id', flat=True)
-
-    users_queryset = User.objects.exclude(id=request.user.id).exclude(id__in=friend_ids)
-
-    if search_query:
-        users = users_queryset.filter(username__icontains=search_query)
-    else:
-        users = users_queryset
-
-    return render(request, 'community/user_list.html', {
-        'users': users,
-        'search_query': search_query,
-    })
-
-# --- PROFİL SİSTEMİ: DASHBOARD VE AKTİF MÜCADELELERLE SENKRONİZE EDİLMİŞ VERSİYON ---
-@login_required
-def user_profile(request, username):
-    profile_user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(user=profile_user).order_by('-created_at')
-
-    # Takip Kontrolü
-    following_relations = Friendship.objects.filter(from_user=profile_user)
-    following_list = [rel.to_user for rel in following_relations]
-    is_friend = Friendship.objects.filter(from_user=request.user, to_user=profile_user).exists()
-
-    # 🚨 DÜZENLEME: Aktif Mücadelelerin her biri için özel hesaplama yapıyoruz
-    raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
-    active_goals_with_stats = []
-    
-    # Başarı İstatistikleri İçin Varsayılan Değerler
-    main_streak = 0
-    monthly_clean_count = 0
-    success_rate = 0
-    badges = []
-    current_status = "Aktif"
-    recent_logs = []
-    friend_activities = []
-
-    # Döngü ile her hedefin serisini (streak) hesaplayalım
-    for goal in raw_goals:
-        # Son bozma (relapse) kaydını bul
-        last_relapse = DailyLog.objects.filter(goal=goal, relapse=True).order_by('-date').first()
-        
-        if last_relapse:
-            # Bozulma varsa, o tarihten sonrakileri say
-            streak = DailyLog.objects.filter(
-                goal=goal, relapse=False, date__gt=last_relapse.date
-            ).values('date').distinct().count()
-        else:
-            # Hiç bozulma yoksa hepsini say
-            streak = DailyLog.objects.filter(
-                goal=goal, relapse=False
-            ).values('date').distinct().count()
-
-        # Hedefe streak ve status bilgilerini dinamik ekleyelim
-        goal.streak = streak
-        
-        # Hedefin durumunu belirle (En son kayda bakarak)
-        last_log = DailyLog.objects.filter(goal=goal).order_by('-date').first()
-        goal.status = "Güçlü"
-        if last_log:
-            if last_log.relapse: goal.status = "Kriz Yaşadı"
-            elif last_log.craving_level >= 7: goal.status = "Zorlanıyor"
-            
-        active_goals_with_stats.append(goal)
-
-    # Genel istatistikler ve Dashboard senkronizasyonu (İlk hedef ana baz alınır)
-    if active_goals_with_stats:
-        primary_goal = active_goals_with_stats[0]
-        main_streak = primary_goal.streak
-        today = datetime.date.today()
-        start_of_month = today.replace(day=1)
-
-        # AYLIK BAŞARI: Dashboard ile aynı (Sadece bu ayın toplamı)
-        monthly_clean_count = DailyLog.objects.filter(
-            goal=primary_goal, 
-            date__gte=start_of_month,
-            relapse=False
-        ).values('date').distinct().count()
-        
-        success_rate = int((monthly_clean_count / 30) * 100) if monthly_clean_count <= 30 else 100
-        
-        # SAĞ KOLON: Kullanıcının son 5 aktivite kaydı
-        recent_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:5]
-
-        # ROZET MANTIĞI (Kesintisiz seriye göre)
-        if main_streak >= 1: badges.append({'name': 'İlk Adım', 'icon': '🥉'})
-        if main_streak >= 7: badges.append({'name': 'Savaşçı', 'icon': '🥈'})
-        if main_streak >= 30: badges.append({'name': 'Efendi', 'icon': '🥇'})
-
-        # Genel Durum (Anlık)
-        current_status = primary_goal.status
-
-    # ARKADAŞ HABERLERİ
-    if request.user == profile_user:
-        my_follows = Friendship.objects.filter(from_user=request.user).values_list('to_user', flat=True)
-        friend_activities = DailyLog.objects.filter(
-            goal__user__in=my_follows
-        ).order_by('-date')[:10]
-
-    return render(request, 'community/user_profile.html', {
-        'profile_user': profile_user,
-        'posts': posts,
-        'is_friend': is_friend,
-        'active_goals': active_goals_with_stats, # 🚨 Değişen liste
-        'clean_days': main_streak,      # Siyah Kart (Seri)
-        'monthly_count': monthly_clean_count, # Performans Barı
-        'success_rate': success_rate,
-        'recent_logs': recent_logs,
-        'following_list': following_list,
-        'current_status': current_status,
-        'badges': badges,
-        'friend_activities': friend_activities,
-    })
-
-@login_required
-def toggle_friend(request, user_id):
-    to_user = get_object_or_404(User, id=user_id)
-    if to_user != request.user:
-        friendship, created = Friendship.objects.get_or_create(
-            from_user=request.user,
-            to_user=to_user
-        )
-        if not created:
-            friendship.delete()
-    return redirect(request.META.get('HTTP_REFERER', 'community:user_profile'))
+def report_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        description = request.POST.get('description', '')
+        Report.objects.create(reporter=request.user, post=post, reason=reason, description=description)
+        return redirect('community:post_detail', post_id=post.id)
+    return render(request, 'community/report_post.html', {'post': post})
 
 @login_required
 def edit_profile(request, goal_id):
     goal = get_object_or_404(DependencyGoal, id=goal_id, user=request.user)
-    
     if request.method == 'POST':
         form = GoalForm(request.POST, instance=goal)
         if form.is_valid():
@@ -207,5 +240,4 @@ def edit_profile(request, goal_id):
             return redirect('community:user_profile', username=request.user.username)
     else:
         form = GoalForm(instance=goal)
-    
     return render(request, 'community/edit_profile.html', {'form': form})

@@ -57,7 +57,7 @@
                             </a>
 
                             <!-- Sadece Arkadaş Ekle butonu; çünkü arkadaş oldukların listeden views tarafında elendi -->
-                            <a href="{% url 'community:toggle_friend' user_id=user.id %}" class="btn btn-success btn-sm rounded-pill fw-bold">
+                            <a href="{% url 'community:send_request' user_id=user.id %}" class="btn btn-success btn-sm rounded-pill fw-bold">
                                 <i class="bi bi-person-plus-fill"></i> Arkadaş Ekle
                             </a>
                         </div>

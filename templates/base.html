@@ -4,56 +4,180 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BreakFree</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f8f9fa;
+            padding-top: 70px; /* Navbar'ın içeriği kapatmaması için */
+        }
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+        /* Modern Glassmorphism Navbar */
+        .navbar-custom {
+            background: rgba(33, 37, 41, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #198754;
+            padding: 0.5rem 0;
+        }
+
+        .navbar-brand { 
+            letter-spacing: 1.5px; 
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: rgba(255,255,255,0.8) !important;
+        }
+
+        .nav-link:hover { 
+            color: #198754 !important; 
+        }
+
+        /* SOS BUTONU (Zorlanıyorum) */
+        .btn-sos {
+            background: linear-gradient(45deg, #dc3545, #ff4d5a);
+            color: white !important;
+            border: none;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.2);
+            transition: all 0.3s ease;
+            animation: pulse-red 2s infinite;
+        }
+
+        .btn-sos:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        .notification-badge {
+            font-size: 0.65rem;
+            transform: translate(25%, -25%);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top shadow">
         <div class="container">
+            <!-- Logo -->
             <a class="navbar-brand fw-bold text-success" href="{% url 'tracking:dashboard' %}">
-                BreakFree
+                <span class="text-white">Break</span>Free
             </a>
 
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto">
+            <!-- Mobil Toggle -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                <i class="bi bi-list fs-2"></i>
+            </button>
+
+            <!-- Menü İçeriği -->
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
                     {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'tracking:dashboard' %}">Takip Paneli</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'community:community_home' %}">Topluluk</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'community:user_list' %}">Arkadaş Bul</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'community:user_profile' request.user.username %}">Profilim</a>
-                        </li>
-                        <li class="nav-item ms-lg-4">
-                            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent" style="cursor: pointer;">
-                                    Çıkış Yap
-                                </button>
-                            </form>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Giriş Yap</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register' %}">Kayıt Ol</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'tracking:dashboard' %}">Takip Paneli</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'community:community_home' %}">Topluluk</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'community:user_list' %}">Arkadaş Bul</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'community:user_profile' request.user.username %}">Profilim</a></li>
                     {% endif %}
                 </ul>
+
+                <!-- Sağ Taraf Butonlar -->
+                <div class="d-flex align-items-center gap-3">
+                    {% if user.is_authenticated %}
+                        <!-- Bildirimler -->
+                        <a class="nav-link position-relative p-2" href="{% url 'community:notifications' %}">
+                            <i class="bi bi-bell-fill fs-5 text-white"></i>
+                            {% if unread_notifications_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
+                                    {{ unread_notifications_count }}
+                                </span>
+                            {% endif %}
+                        </a>
+
+                        <!-- SOS -->
+                        <button type="button" class="btn btn-sos btn-sm rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#crisisModal">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Zorlanıyorum
+                        </button>
+
+                        <!-- Çıkış -->
+                        <form action="{% url 'logout' %}" method="post" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link text-danger fw-bold text-decoration-none small p-0 ms-2">
+                                Çıkış Yap
+                            </button>
+                        </form>
+                    {% else %}
+                        <a class="nav-link text-white" href="{% url 'login' %}">Giriş Yap</a>
+                        <a class="btn btn-success btn-sm rounded-pill px-4" href="{% url 'register' %}">Kayıt Ol</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container">
+    <!-- Ana İçerik Alanı -->
+    <div class="container my-4">
         {% block content %}
         {% endblock %}
     </div>
 
+    <!-- 🚨 SOS MODALI -->
+    <div class="modal fade" id="crisisModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-heart-pulse-fill me-2"></i>Destek Hattı</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body text-center p-5">
+                    <div id="crisisContent">
+                        <h3 class="fw-bold text-dark mb-3">Derin Bir Nefes Al...</h3>
+                        <p class="fs-5 text-secondary" id="motivationText">Şu an hissettiğin duygu sadece bir dalga, kıyıya vuracak ve geçecek. Sabret.</p>
+                        <div class="mt-4 d-grid gap-2">
+                            <button class="btn btn-primary rounded-pill py-2 fw-bold" onclick="getNewMotivation()">
+                                <i class="bi bi-arrow-repeat me-1"></i> Başka Bir Öneri Gör
+                            </button>
+                            <button class="btn btn-outline-secondary rounded-pill py-2 border-0" data-bs-dismiss="modal">Sakinleştim, Teşekkürler</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const motivations = [
+            "Şu an hissettiğin duygu sadece bir dalga, kıyıya vuracak ve geçecek. Sabret.",
+            "Neden başladığını hatırla. Geçmişteki sen, bugünkü seninle gurur duyuyor.",
+            "Hemen şimdi 1 bardak soğuk su iç ve pencereyi açıp derin bir nefes al.",
+            "Bu isteğin ömrü sadece 15-20 dakika. Kendini başka bir şeyle oyala, geçecek.",
+            "Bir kereden bir şey olmaz deme, o 'bir kere' senin tüm emeğini çalar. Dayan!",
+            "Başardığın günleri hatırla. Bugün de onlardan biri olacak.",
+            "Zihninin seni kandırmasına izin verme. Sen patronun sensin.",
+            "Yarın uyandığında 'iyi ki yapmadım' demenin huzurunu hayal et."
+        ];
+
+        function getNewMotivation() {
+            const textElement = document.getElementById('motivationText');
+            let randomText;
+            do {
+                randomText = motivations[Math.floor(Math.random() * motivations.length)];
+            } while (randomText === textElement.innerText);
+            textElement.innerText = randomText;
+        }
+    </script>
 </body>
 </html>

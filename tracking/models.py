@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone # Tarih işlemleri için gerekli
 
+# --- HEDEF VE LOG MODELLERİ ---
+
 class DependencyGoal(models.Model):
     DEPENDENCY_CHOICES = [
         ('sigara', 'Sigara'),
@@ -42,8 +44,40 @@ class DailyLog(models.Model):
 
     class Meta:
         ordering = ['-date']
-        # Aynı güne mükerrer kayıt girilmesini engellemek için (isteğe bağlı):
+        # Aynı güne mükerrer kayıt girilmesini engellemek için:
         # unique_together = ('goal', 'date')
 
     def __str__(self):
         return f"{self.date} | {self.goal.user.username} | Relapse: {'Evet' if self.relapse else 'Hayır'}"
+
+
+# --- 🚨 YENİ EKLENEN: ROZET SİSTEMİ MODELLERİ (GAMIFICATION) ---
+
+class Badge(models.Model):
+    """
+    Sistemde tanımlı olan genel rozetler (7 Gün, 30 Gün vb.)
+    """
+    name = models.CharField(max_length=100)
+    description = models.TextField(help_text="Rozetin bilimsel veya motivasyonel açıklaması")
+    image_name = models.CharField(max_length=50, help_text="İkon için emoji veya dosya adı (örn: 🛡️)")
+    days_required = models.IntegerField(help_text="Bu rozeti almak için gereken kesintisiz gün sayısı")
+
+    def __str__(self):
+        return f"{self.name} ({self.days_required} Gün)"
+
+class UserBadge(models.Model):
+    """
+    Kullanıcıların kazandığı rozetleri eşleştiren ara tablo
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Bir kullanıcı aynı rozeti sadece bir kez kazanabilir
+        unique_together = ('user', 'badge')
+        verbose_name = "Kazanılan Rozet"
+        verbose_name_plural = "Kazanılan Rozetler"
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge.name}"

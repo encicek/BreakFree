@@ -1,11 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import DependencyGoal, DailyLog
+from django.http import JsonResponse
+from django.db.models import Q
+from .models import DependencyGoal, DailyLog, Badge, UserBadge
+from community.models import Friendship, Notification 
 from .forms import GoalForm, DailyLogForm
 import datetime
 import json
+import random
 
-# 1. BİLİMSEL TEMELLİ ANKET SORULARI (Değişmedi)
+# 1. ANKET SORULARI (Değişmedi)
 DEPENDENCY_SURVEYS = {
     'sigara': [
         {'id': 1, 'text': 'Günde ortalama kaç adet sigara tüketiyorsunuz?', 'choices': [('0', '10 veya daha az'), ('10', '11-20 adet'), ('20', '21-30 adet'), ('30', '31 ve üzeri')]},
@@ -36,7 +40,7 @@ DEPENDENCY_SURVEYS = {
     ]
 }
 
-# 2. AYLIk ANALİZ VE DASHBOARD
+# 2. DASHBOARD
 @login_required(login_url='/accounts/login/')
 def dashboard(request):
     all_active_goals = DependencyGoal.objects.filter(user=request.user, is_active=True)
@@ -59,53 +63,45 @@ def dashboard(request):
         else:
             end_of_month = datetime.date(current_year, current_month + 1, 1)
         
-        # 🚨 1. TOPLAM BAŞARI SERİSİ (STREAK - Siyah kart için)
-        # En son 'Bozdum' işaretlenen kaydı bul
         last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
         if last_relapse:
-            # Son bozmadan sonraki temiz günleri sayıyoruz
             current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
         else:
-            # Hiç bozmadıysa tüm temiz günleri say
             current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
         
-        # 🚨 2. AYLIK BAŞARI (O ay içindeki toplam temiz gün sayısı - Performans barı için)
         current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
         monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
-        
-        # Başarı Oranı (Aylık toplam gün üzerinden)
         days_in_month = (end_of_month - start_of_month).days
-        success_rate = int((monthly_clean_count / days_in_month) * 100)
+        success_rate = int((monthly_clean_count / days_in_month) * 100) if days_in_month > 0 else 0
 
-        # 🚨 3. GRAFİK VE ANALİZLER
+        analysis_options = {
+            "level_1": ["Vücudun dopamin dengesini yeniden kurmaya başladı!", "Beynindeki Prefrontal Korteks direksiyonun başında!"],
+            "level_2": ["İraden bir kas gibi güçleniyor!", "Beyninde nöroplastisite gerçekleşiyor!"],
+            "level_3": ["Amigdala şu an biraz gürültülü olabilir.", "Stratejini değiştirme zamanı gelmiş olabilir."]
+        }
+
+        if success_rate >= 90:
+            report_title, report_color = "Mükemmel İstikrar", "success"
+            report_text = random.choice(analysis_options["level_1"])
+        elif success_rate >= 70:
+            report_title, report_color = "Güçlü Gelişim", "info"
+            report_text = random.choice(analysis_options["level_2"])
+        else:
+            report_title, report_color = "Dikkat: Riskli Bölge", "warning"
+            report_text = random.choice(analysis_options["level_3"])
+
         chart_labels = [log.date.strftime('%d %b') for log in current_month_logs]
         chart_data = [log.craving_level for log in current_month_logs]
         avg_craving = sum(chart_data) / len(chart_data) if chart_data else 0
         
-        # Biyolojik Durum Mantığı (Toplam temiz gün sayısına göre)
         total_clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
-        if total_clean_days >= 30:
-            bio_status = "Tam Onarım"
-        elif total_clean_days >= 7:
-            bio_status = "Hücresel Yenilenme"
-        elif total_clean_days >= 1:
-            bio_status = "Onarım Başladı"
-        else:
-            bio_status = "Stabilizasyon"
+        if total_clean_days >= 30: bio_status = "Tam Onarım"
+        elif total_clean_days >= 7: bio_status = "Hücresel Yenilenme"
+        elif total_clean_days >= 1: bio_status = "Onarım Başladı"
+        else: bio_status = "Stabilizasyon"
 
+        user_badges = UserBadge.objects.filter(user=request.user).select_related('badge')
         has_entry_today = goal.logs.filter(date=today).exists()
-        
-        # Rapor Metinleri
-        if success_rate >= 90:
-            report_title, report_color = "Mükemmel İstikrar", "success"
-            report_text = f"Bu ay %{success_rate} başarı oranıyla harikasın. Kendine verdiğin değeri kanıtlıyorsun."
-        elif success_rate >= 70:
-            report_title, report_color = "Güçlü Gelişim", "info"
-            report_text = f"Bu ay %{success_rate} oranında temiz kaldın. Süreç çok iyi ilerliyor."
-        else:
-            report_title, report_color = "Dikkat: Riskli Bölge", "warning"
-            report_text = f"Bu ayki %{success_rate} başarı oranı tetikleyicilerin seni zorladığını gösteriyor. Notlarını incele ve seni neyin geriye ittiğini analiz et."
-
         risk_level = "Yüksek" if goal.initial_score > 70 else "Orta" if goal.initial_score > 35 else "Düşük"
 
         if request.method == 'POST':
@@ -118,33 +114,36 @@ def dashboard(request):
             log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
 
         context = {
-            'goal': goal,
-            'all_active_goals': all_active_goals,
-            'existing_types': list(existing_types),
-            'clean_days': current_streak, # 🚨 Siyah karta kesintisiz seriyi gönderiyoruz
-            'monthly_count': monthly_clean_count, # 🚨 Performans altına aylık toplamı gönderiyoruz
-            'success_rate': success_rate,
-            'risk_level': risk_level,
-            'log_form': log_form,
-            'current_month_name': start_of_month.strftime('%B'),
-            'current_month': current_month,
-            'current_year': current_year,
-            'chart_labels': json.dumps(chart_labels),
-            'chart_data': json.dumps(chart_data),
-            'report_title': report_title,
-            'report_text': report_text,
-            'report_color': report_color,
-            'avg_craving': round(avg_craving, 1),
-            'bio_status': bio_status,
-            'has_entry_today': has_entry_today,
-            'prev_month': 12 if current_month == 1 else current_month - 1,
+            'goal': goal, 'all_active_goals': all_active_goals, 'existing_types': list(existing_types),
+            'clean_days': current_streak, 'monthly_count': monthly_clean_count, 'success_rate': success_rate,
+            'risk_level': risk_level, 'log_form': log_form, 'current_month': current_month, 'current_year': current_year,
+            'chart_labels': json.dumps(chart_labels), 'chart_data': json.dumps(chart_data),
+            'report_title': report_title, 'report_text': report_text, 'report_color': report_color,
+            'avg_craving': round(avg_craving, 1), 'bio_status': bio_status, 'user_badges': user_badges,
+            'has_entry_today': has_entry_today, 'prev_month': 12 if current_month == 1 else current_month - 1,
             'next_month': 1 if current_month == 12 else current_month + 1,
         }
         return render(request, 'tracking/dashboard.html', context)
-    
-    return render(request, 'tracking/dashboard.html', {'goal': None, 'existing_types': list(existing_types)})
+    return render(request, 'tracking/dashboard.html', {'goal': None, 'all_active_goals': all_active_goals})
 
-# 3. ANKET SİSTEMİ (Değişmedi)
+# 3. SOS FONKSİYONU
+@login_required(login_url='/accounts/login/')
+def send_crisis_notification(request):
+    if request.method == 'POST':
+        try:
+            friends_qs = Friendship.objects.filter((Q(from_user=request.user) | Q(to_user=request.user)), status='accepted')
+            friends_list = list(friends_qs)
+            if friends_list:
+                selected_friendship = random.choice(friends_list)
+                target_user = selected_friendship.to_user if selected_friendship.from_user == request.user else selected_friendship.from_user
+                Notification.objects.create(recipient=target_user, sender=request.user, notification_type='support', post=None, is_read=False)
+                return JsonResponse({'status': 'success'})
+            return JsonResponse({'status': 'no_friends'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'invalid_method'}, status=400)
+
+# 4. ANKET VE HEDEF OLUŞTURMA
 @login_required(login_url='/accounts/login/')
 def survey_view(request):
     dep_type = request.GET.get('type', 'sigara')
@@ -162,42 +161,28 @@ def survey_view(request):
         return redirect('tracking:create_goal')
     return render(request, 'tracking/survey.html', {'questions': questions, 'type': dep_type})
 
-# 4. HEDEF OLUŞTURMA (Değişmedi)
 @login_required(login_url='/accounts/login/')
 def create_goal(request):
     initial_score = request.session.get('calculated_score')
     chosen_type = request.session.get('chosen_type')
-
-    if initial_score is None:
-        return redirect('/tracking/dashboard/?new_goal=true')
-    
+    if initial_score is None: return redirect('/tracking/dashboard/?new_goal=true')
     existing_goal = DependencyGoal.objects.filter(user=request.user, dependency_type=chosen_type).first()
-
     if request.method == 'POST':
         if existing_goal:
-            if int(initial_score) > 0:
-                existing_goal.initial_score = int(initial_score)
+            if int(initial_score) > 0: existing_goal.initial_score = int(initial_score)
             existing_goal.is_active = True
             existing_goal.save()
-            request.session.pop('calculated_score', None)
-            request.session.pop('chosen_type', None)
-            return redirect('tracking:dashboard')
-        
-        form = GoalForm(request.POST)
-        if form.is_valid():
-            goal = form.save(commit=False)
-            goal.user = request.user
-            goal.dependency_type = chosen_type
-            goal.initial_score = int(initial_score)
-            goal.save()
-            request.session.pop('calculated_score', None)
-            request.session.pop('chosen_type', None)
-            return redirect('tracking:dashboard')
+        else:
+            form = GoalForm(request.POST)
+            if form.is_valid():
+                goal = form.save(commit=False)
+                goal.user = request.user
+                goal.dependency_type = chosen_type
+                goal.initial_score = int(initial_score)
+                goal.save()
+        request.session.pop('calculated_score', None)
+        request.session.pop('chosen_type', None)
+        return redirect('tracking:dashboard')
     else:
         form = GoalForm(initial={'dependency_type': chosen_type})
-    
-    return render(request, 'tracking/create_goal.html', {
-        'form': form, 
-        'score': initial_score, 
-        'exists': existing_goal
-    })
+    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal})

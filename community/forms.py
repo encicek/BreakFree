@@ -1,24 +1,29 @@
 from django import forms
 from .models import Post, Comment
 
-
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ['title', 'content', 'addiction_type']
+        # 🚨 DÜZENLEME: 'is_anonymous' alanı listeye eklendi
+        fields = ['title', 'content', 'addiction_type', 'is_anonymous']
 
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter post title'
+                'placeholder': 'Örn: Bugünü de başarıyla tamamladım!'
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Share your experience...',
+                'placeholder': 'Neler hissettiğini veya tecrübelerini buraya yazabilirsin...',
                 'rows': 5
             }),
             'addiction_type': forms.Select(attrs={
-                'class': 'form-control'
+                'class': 'form-select' # Bootstrap 5 uyumu için form-control yerine form-select
+            }),
+            # 🚨 DÜZENLEME: Anonimlik switch'i için checkbox widget'ı
+            'is_anonymous': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'role': 'switch'
             }),
         }
 
@@ -31,7 +36,7 @@ class CommentForm(forms.ModelForm):
         widgets = {
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Write your comment...',
+                'placeholder': 'Bir destek mesajı veya yorum yaz...',
                 'rows': 3
             }),
         }

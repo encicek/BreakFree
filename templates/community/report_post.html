@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <!-- Geri Dön Linki -->
+            <div class="mb-4">
+                <a href="{% url 'community:post_detail' post.id %}" class="text-decoration-none text-muted small">
+                    <i class="bi bi-chevron-left"></i> Gönderiye Geri Dön
+                </a>
+            </div>
+
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-danger mb-3">
+                            <i class="bi bi-exclamation-octagon"></i>
+                        </div>
+                        <h3 class="fw-bold">Gönderiyi Şikayet Et</h3>
+                        <p class="text-muted small">Bu gönderinin topluluk kurallarımızı ihlal ettiğini düşünüyorsan lütfen bize bildir.</p>
+                    </div>
+
+                    <div class="bg-light rounded-4 p-3 mb-4 border-start border-4 border-danger">
+                        <h6 class="fw-bold mb-1">Şikayet Edilen Gönderi:</h6>
+                        <p class="mb-0 text-truncate text-secondary fst-italic">"{{ post.title }}"</p>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Şikayet Nedeni Seçimi -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase">Neden Şikayet Ediyorsun?</label>
+                            <select name="reason" class="form-select border-0 bg-light rounded-pill px-4 py-3 shadow-none" required>
+                                <option value="" selected disabled>Bir neden seçin...</option>
+                                <option value="spam">Spam / Gereksiz</option>
+                                <option value="harassment">Taciz / Zorbalık</option>
+                                <option value="inappropriate">Uygunsuz İçerik</option>
+                                <option value="misleading">Yanıltıcı Bilgi</option>
+                                <option value="other">Diğer</option>
+                            </select>
+                        </div>
+
+                        <!-- Detaylı Açıklama -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase">Ek Açıklama (Opsiyonel)</label>
+                            <textarea name="description" class="form-control border-0 bg-light rounded-4 p-4 shadow-none" rows="4" placeholder="Durumu biraz daha detaylandırabilir misin?"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger rounded-pill py-3 fw-bold shadow">
+                                Şikayeti Gönder
+                            </button>
+                            <a href="{% url 'community:post_detail' post.id %}" class="btn btn-link text-decoration-none text-muted fw-bold">
+                                İptal Et
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <p class="text-center text-muted small mt-4">
+                <i class="bi bi-shield-lock me-1"></i> Şikayetin anonim olarak değerlendirilecektir.
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-select, .form-control {
+        transition: all 0.2s ease;
+    }
+    .form-select:focus, .form-control:focus {
+        background-color: #f1f3f5 !important;
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.1) !important;
+    }
+</style>
+{% endblock %}
