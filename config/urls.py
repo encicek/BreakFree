@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.auth import views as auth_views # Eksik olan ve hatayı çözen satır bu!
+from django.views.generic import RedirectView
 
 # Admin Paneli Özelleştirmeleri
 admin.site.site_header = "BreakFree Yönetim Paneli"
@@ -24,10 +24,15 @@ admin.site.site_title = "BreakFree Admin"
 admin.site.index_title = "Sistem Yönetimine Hoş Geldiniz"
 
 urlpatterns = [
+    # 1. Siteye ilk girildiğinde direkt giriş ekranına atar
+    path('', RedirectView.as_view(url='/accounts/login/', permanent=True)), 
+    
+    # 🚨 EKLEDİĞİMİZ SATIR: /login/ hatasını /accounts/login/ sayfasına yönlendirerek çözer
+    path('login/', RedirectView.as_view(url='/accounts/login/', permanent=False)),
+
+    # 2. Uygulama Yolları (Eski kodlarına dokunmadık)
     path('admin/', admin.site.urls),
-    # Login sayfası için auth_views artık tanımlı olduğu için hata vermeyecek
-    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html', next_page='/tracking/'), name='login'),
     path('tracking/', include('tracking.urls')),
     path('community/', include(('community.urls', 'community'), namespace='community')),
-    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('accounts.urls')), 
 ]

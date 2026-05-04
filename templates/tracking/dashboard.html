@@ -5,7 +5,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <div class="container mt-5">
-    {% if goal and not request.GET.new_goal %}
+    {% if goal and not new_goal_mode %}
         <!-- 🚨 ÜST BAR: ANALİZ EDİLEN HEDEF -->
         <div class="card shadow-sm border-0 mb-4 bg-primary bg-opacity-10">
             <div class="card-body d-flex justify-content-between align-items-center py-2">
@@ -39,7 +39,7 @@
                     </div>
                 </div>
 
-                <!-- 🚨 YENİ: BAŞARI ROZETLERİ ALANI -->
+                <!-- BAŞARI ROZETLERİ ALANI -->
                 <div class="card shadow-sm border-0 mb-4 bg-white">
                     <div class="card-body p-3">
                         <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">
@@ -93,7 +93,7 @@
                     <a href="?goal_id={{ goal.id }}&month={{ next_month }}" class="btn btn-sm btn-light border shadow-sm px-3">→</a>
                 </div>
 
-                <!-- 🚨 DİNAMİK ANALİZ KARTI -->
+                <!-- DİNAMİK ANALİZ KARTI -->
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-cpu me-2"></i>Profesyonel Durum Analizi</h5>
@@ -165,10 +165,32 @@
             </div>
         </div>
     {% else %}
+        <!-- 🚨 GÜNCELLENEN SEÇİM EKRANI: HEDEF YOKSA VEYA YENİ HEDEF BAŞLATILIYORSA -->
         <div class="text-center py-5">
-            <i class="bi bi-clipboard2-plus display-1 text-muted opacity-25"></i>
-            <h4 class="mt-3 text-muted">Henüz aktif bir takibiniz bulunmuyor.</h4>
-            <a href="?new_goal=true" class="btn btn-primary rounded-pill px-5 mt-3">Yeni Hedef Başlat</a>
+            <h4 class="mb-4 fw-bold">Hangi bağımlılıktan özgürleşmek istiyorsun?</h4>
+            <div class="d-flex flex-wrap justify-content-center gap-3">
+                <a href="{% url 'tracking:survey' %}?type=sigara" class="btn btn-outline-primary rounded-pill px-4 py-2 shadow-sm">
+                    🚬 Sigara
+                </a>
+                <a href="{% url 'tracking:survey' %}?type=alkol" class="btn btn-outline-danger rounded-pill px-4 py-2 shadow-sm">
+                    🍷 Alkol
+                </a>
+                <a href="{% url 'tracking:survey' %}?type=ekran" class="btn btn-outline-success rounded-pill px-4 py-2 shadow-sm">
+                    📱 Ekran
+                </a>
+                <a href="{% url 'tracking:survey' %}?type=madde" class="btn btn-outline-warning rounded-pill px-4 py-2 shadow-sm">
+                    💊 Madde
+                </a>
+            </div>
+            
+            <hr class="my-5 opacity-25">
+            
+            <p class="text-muted small">Her büyük yolculuk küçük bir adımlarla başlar.</p>
+            {% if all_active_goals %}
+                <a href="{% url 'tracking:dashboard' %}" class="btn btn-light btn-sm rounded-pill shadow-sm">
+                    <i class="bi bi-arrow-left"></i> Panele Geri Dön
+                </a>
+            {% endif %}
         </div>
     {% endif %}
 </div>
@@ -179,8 +201,8 @@
     document.addEventListener("DOMContentLoaded", function() {
         const chartElement = document.getElementById('cravingChart');
         if (chartElement) {
-            const labels = {{ chart_labels|safe }};
-            const data = {{ chart_data|safe }};
+            const labels = {{ chart_labels|safe|default:"[]" }};
+            const data = {{ chart_data|safe|default:"[]" }};
             
             new Chart(chartElement, {
                 type: 'line',
@@ -216,5 +238,6 @@
     .bg-info { background-color: #0dcaf0 !important; }
     .border-info { border-color: #0dcaf0 !important; }
     .text-info { color: #0dcaf0 !important; }
+    .btn-primary:hover, .btn-outline-primary:hover { transform: translateY(-2px); transition: 0.2s; }
 </style>
 {% endblock %}
