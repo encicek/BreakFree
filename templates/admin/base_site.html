@@ -4,69 +4,59 @@
 <style>
     /* --- BREAKFREE UNIFIED GREEN & WHITE DESIGN --- */
     :root {
-        --breakfree-green: #468c46 !important; /* Giriş ekranındaki ana yeşilin */
-        --bg-clean: #ffffff !important;
-        --bg-soft-grey: #f8f9fa !important;
+        --breakfree-green: #468c46 !important; /* Giriş sayfasındaki ana yeşil */
+        --bg-main: #f8f9fa !important;         /* Beyazı kıran hafif gri arka plan */
+        --bg-card: #ffffff !important;         /* Kartların içi saf beyaz */
+        --text-dark: #333333 !important;
+        --border-light: #d1d1d1 !important;
     }
 
-    /* 1. TÜM SİYAHLIKLARI VE KOYU GRİLERİ YOK ET */
+    /* 1. TÜM SİYAHLIKLARI YOK ET VE ARKA PLANI GİRİŞ SAYFASIYLA EŞİTLE */
     body, #content, .module, #content-main, .change-form, 
     .submit-row, .paginator, #footer, #nav-sidebar { 
-        background-color: var(--bg-clean) !important; 
-        color: #333 !important; 
+        background-color: var(--bg-main) !important; 
+        color: var(--text-dark) !important; 
         box-shadow: none !important;
-        border-color: #eee !important;
     }
 
-    /* 2. ÜST BİLGİ VE NAVİGASYON (GİRİŞ EKRANIYLA AYNI) */
+    /* 2. ÜST BAR (HEADER) */
     #header { 
         background: var(--breakfree-green) !important; 
         color: white !important;
         padding: 15px 40px !important;
     }
 
-    div.breadcrumbs {
-        background: var(--bg-soft-grey) !important;
-        color: var(--breakfree-green) !important;
-        border-bottom: 1px solid #ddd !important;
-        padding: 10px 40px !important;
-    }
-    div.breadcrumbs a { color: var(--breakfree-green) !important; font-weight: 600 !important; }
-
-    /* 3. GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
+    /* 3. GRUP BAŞLIKLARI (SON EYLEMLERLE AYNI TASARIM) */
     .module h2, .module caption, .inline-group h2, #content-related h2 { 
         background: var(--breakfree-green) !important; 
         color: #ffffff !important; 
-        font-weight: bold !important;
+        font-weight: 600 !important;
         text-transform: uppercase !important;
         padding: 12px 15px !important;
         border: none !important;
+        border-radius: 4px 4px 0 0 !important;
     }
 
-    /* 4. FORM SATIRLARI (BEYAZ VE TEMİZ) */
-    .form-row {
-        background: var(--bg-clean) !important;
-        border-bottom: 1px solid #eee !important;
-        padding: 15px !important;
-    }
-    
-    /* Form içindeki metin alanlarını siyahlıktan kurtar */
-    textarea, input[type="text"], input[type="password"], select {
-        background-color: #fff !important;
-        color: #333 !important;
-        border: 1px solid #ccc !important;
+    /* 4. KART YAPISI (GİRİŞ SAYFASINDAKİ GİBİ BEYAZ KUTULAR) */
+    .module, .form-row, .submit-row {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 6px !important;
+        margin-bottom: 20px !important;
     }
 
-    /* 5. GÖRSELDEKİ O SİYAH ALT BARI (SUBMIT ROW) DÜZELTME */
+    .form-row { padding: 15px !important; margin-bottom: 0 !important; border-radius: 0 !important; }
+
+    /* 5. EKLE VE DEĞİŞTİR SAYFALARINDAKİ SİYAH BUTON BARI DÜZELTME */
     .submit-row {
-        background: var(--bg-soft-grey) !important; /* Siyah yerine açık gri/beyaz */
-        border: 1px solid #ddd !important;
-        border-radius: 8px !important;
-        margin-top: 20px !important;
+        background: var(--bg-card) !important; /* Siyahlığı beyaza çevirdik */
         padding: 15px !important;
+        display: flex !important;
+        gap: 10px !important;
+        flex-direction: row-reverse !important;
     }
 
-    /* KAYDET / SİL BUTONLARI (TAMAMEN YEŞİL) */
+    /* KAYDET / DEĞİŞTİR BUTONLARI */
     .submit-row input, .submit-row input.default, .button, .default {
         background: var(--breakfree-green) !important;
         color: white !important;
@@ -75,24 +65,33 @@
         font-weight: bold !important;
         border-radius: 4px !important;
         text-transform: uppercase !important;
+        cursor: pointer !important;
     }
 
-    .submit-row a.deletelink {
-        background: #ba2121 !important; /* Silme butonu kırmızı kalsın ama siyah olmasın */
-        color: white !important;
-        padding: 10px 20px !important;
-        border-radius: 4px !important;
+    /* 6. TABLO VE SATIR RENKLERİ */
+    .module table tbody tr {
+        background-color: var(--bg-card) !important;
+        border-bottom: 1px solid #eeeeee !important;
     }
 
-    /* 6. KARANLIK MODU ZORLA DEVRE DIŞI BIRAK (RENDERING FIX) */
+    .module table tbody tr:hover {
+        background-color: #f1f8f1 !important;
+    }
+
+    .module table th a {
+        color: var(--breakfree-green) !important;
+        font-weight: 600 !important;
+    }
+
+    /* 7. DARK MODE ZORLAMASINI TAMAMEN SİL */
     @media (prefers-color-scheme: dark) {
         body, #content, .module, .form-row, .submit-row, #nav-sidebar, 
         textarea, input, select { 
-            background-color: var(--bg-clean) !important; 
-            color: #333 !important; 
+            background-color: var(--bg-main) !important; 
+            color: var(--text-dark) !important; 
         }
+        .module, .form-row, .submit-row { background: var(--bg-card) !important; }
         #header, .module h2 { background: var(--breakfree-green) !important; color: white !important; }
-        .submit-row { background: var(--bg-soft-grey) !important; }
     }
 </style>
 
