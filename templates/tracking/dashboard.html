@@ -170,8 +170,8 @@
             <i class="bi bi-clipboard2-plus display-1 text-muted opacity-25"></i>
             <h4 class="mt-3 text-muted">Henüz aktif bir takibiniz bulunmuyor.</h4>
             
-            <!-- 🚨 DÜZELTİLEN BUTON: Hem manuel adres hem de Django URL etiketi eklendi -->
-            <a href="{% url 'create_goal' %}" class="btn btn-primary rounded-pill px-5 mt-3 shadow-sm">
+            <!-- 🚨 DÜZELTİLEN KRİTİK BUTON: Manuel adres ile NoReverseMatch hatası engellendi -->
+            <a href="/tracking/yeni-hedef/" class="btn btn-primary rounded-pill px-5 mt-3 shadow-sm">
                 Yeni Hedef Başlat
             </a>
         </div>
