@@ -17,7 +17,7 @@ def create_admin_account(request):
         return HttpResponse("Admin hesabı oluşturuldu!")
     return HttpResponse("Admin zaten mevcut.")
 
-# 1. ANKET SORULARI (Mevcut haliyle korundu)
+# 1. ANKET SORULARI
 DEPENDENCY_SURVEYS = {
     'sigara': [
         {'id': 1, 'text': 'Günde ortalama kaç adet sigara tüketiyorsunuz?', 'choices': [('0', '10 veya daha az'), ('10', '11-20 adet'), ('20', '21-30 adet'), ('30', '31 ve üzeri')]},
@@ -47,6 +47,13 @@ DEPENDENCY_SURVEYS = {
         {'id': 4, 'text': 'Önemli etkinliklerden madde kullanımı için vazgeçtiniz mi?', 'choices': [('25', 'Evet'), ('0', 'Hayır')]},
     ]
 }
+
+# --- ROZET KONTROL FONKSİYONU (DÜZELTİLDİ) ---
+def check_and_assign_badges(user, streak):
+    # Veritabanı modelindeki 'days_required' alanına göre filtreleme yapıyoruz
+    available_badges = Badge.objects.filter(days_required__lte=streak)
+    for badge in available_badges:
+        UserBadge.objects.get_or_create(user=user, badge=badge)
 
 # 2. DASHBOARD
 @login_required(login_url='/accounts/login/')
@@ -78,36 +85,25 @@ def dashboard(request):
     else:
         end_of_month = datetime.date(current_year, current_month + 1, 1)
     
-    # Mevcut Seri Hesaplama
     last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
     if last_relapse:
         current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
     else:
         current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
     
-    # --- ROZET KONTROL VE ATAMA MANTIĞI ---
-    def check_and_assign_badges(user, streak):
-        # Veritabanında tanımlı olan rozetleri çek
-        available_badges = Badge.objects.filter(required_days__lte=streak)
-        for badge in available_badges:
-            # Kullanıcıda bu rozet yoksa ekle
-            UserBadge.objects.get_or_create(user=user, badge=badge)
-
-    # Veri girişi olduğunda tetiklenir
+    # Veri girişi (POST) durumunda
     if request.method == 'POST':
         log_form = DailyLogForm(request.POST, user=request.user)
         if log_form.is_valid():
             log = log_form.save(commit=False)
             log.save()
-            # Log kaydedildikten sonra rozetleri kontrol et
             check_and_assign_badges(request.user, current_streak)
             return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}&month={current_month}')
     else:
-        # Sayfa her yüklendiğinde de rozetleri kontrol et (Geçmiş veriler için)
+        # Sayfa yüklendiğinde otomatik rozet kontrolü
         check_and_assign_badges(request.user, current_streak)
         log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
 
-    # ... (Geri kalan Dashboard mantığı - Analizler, Grafikler vb. - Değişmedi)
     current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
     monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
     days_in_month = (end_of_month - start_of_month).days
@@ -155,7 +151,7 @@ def dashboard(request):
     }
     return render(request, 'tracking/dashboard.html', context)
 
-# ... (SOS, Survey ve Create Goal fonksiyonları mevcut haliyle korundu)
+# 3. SOS, Survey ve Diğerleri
 @login_required(login_url='/accounts/login/')
 def send_crisis_notification(request):
     if request.method == 'POST':
