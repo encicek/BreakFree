@@ -2,96 +2,108 @@
 
 {% block extrastyle %}
 <style>
-    /* --- UNIFIED BREAKFREE ADMIN THEME --- */
+    /* --- BREAKFREE UNIFIED DESIGN SYSTEM --- */
     :root {
-        --primary-green: #468c46 !important; /* Son Eylemler'deki yeşil tonun */
-        --bg-soft-grey: #f4f7f4 !important;  /* Beyazı kıran hafif gri-yeşil arka plan */
-        --text-dark: #333333 !important;
-        --border-color: #d1d1d1 !important;
+        --primary-green: #468c46 !important;
+        --bg-soft: #f4f7f4 !important;
+        --text-main: #333333 !important;
+        --border-light: #d1d1d1 !important;
     }
 
-    /* 1. GENEL ARKA PLAN */
-    body, #content { 
-        background-color: var(--bg-soft-grey) !important; 
-        color: var(--text-dark) !important;
+    /* 1. GENEL ARKA PLAN VE FORM ALANLARI */
+    body, #content, .change-form, .module, #content-main { 
+        background-color: var(--bg-soft) !important; 
+        color: var(--text-main) !important;
     }
 
-    /* 2. ÜST BAR */
+    /* 2. ÜST BAR (HEADER & BREADCRUMBS) */
     #header { 
         background: var(--primary-green) !important; 
         padding: 12px 40px !important;
     }
 
-    /* 3. BAŞLIKLAR (COMMUNITY, TRACKING, KİMLİK DOĞRULAMA VE SON EYLEMLER UYUMU) */
-    /* Tüm grup başlıklarını sağdaki 'Son Eylemler' ile aynı font ve renge çekiyoruz */
+    div.breadcrumbs {
+        background: #ffffff !important;
+        color: var(--primary-green) !important;
+        border-bottom: 1px solid var(--border-light) !important;
+        padding: 10px 40px !important;
+    }
+
+    div.breadcrumbs a { color: var(--primary-green) !important; font-weight: 600 !important; }
+
+    /* 3. GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
     .module h2, .module caption, .inline-group h2, #content-related h2 { 
         background: var(--primary-green) !important; 
         color: #ffffff !important; 
-        font-family: 'Roboto', 'Segoe UI', sans-serif !important;
         font-weight: 600 !important;
-        font-size: 1.1rem !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
         padding: 12px 15px !important;
-        border: none !important;
         border-radius: 4px 4px 0 0 !important;
     }
 
-    /* 4. MODÜLLER VE KART YAPISI */
-    .module {
+    /* 4. FORM İÇİNDEKİ SİYAHLIKLARI VE ÇİZGİLERİ TEMİZLE */
+    .form-row {
         background: #ffffff !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 6px !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-        margin-bottom: 25px !important;
-    }
-
-    /* 5. TABLO VE SATIRLAR */
-    .module table tbody tr {
         border-bottom: 1px solid #eeeeee !important;
+        padding: 15px !important;
     }
 
-    .module table tbody tr:hover {
-        background-color: #f9fff9 !important;
-    }
+    label { color: #555555 !important; font-weight: 600 !important; }
 
-    .module table td, .module table th {
-        padding: 12px 15px !important;
-    }
-
-    /* Model İsimleri */
-    .module table th a {
-        color: var(--primary-green) !important;
-        font-weight: 600 !important;
-    }
-
-    /* 6. BUTONLAR */
-    .addlink, .changelink {
-        background-color: var(--primary-green) !important;
-        color: white !important;
+    input, select, textarea {
+        border: 1px solid var(--border-light) !important;
         border-radius: 4px !important;
-        padding: 4px 12px !important;
-        font-weight: bold !important;
-        font-size: 0.85rem !important;
+        padding: 5px !important;
     }
 
-    /* 7. DARK MODE ENGELLEME */
+    /* 5. ALT BUTON BARI (SUBMIT ROW) - O SİYAH ŞERİDİ YOK EDELİM */
+    .submit-row {
+        background: #ffffff !important; /* Siyah yerine beyaz */
+        border: 1px solid var(--border-light) !important;
+        border-radius: 6px !important;
+        padding: 15px !important;
+        margin-top: 20px !important;
+    }
+
+    /* KAYDET BUTONLARI */
+    .submit-row input, .submit-row input.default {
+        background: var(--primary-green) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 10px 20px !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        cursor: pointer !important;
+    }
+
+    .submit-row input:hover { opacity: 0.9 !important; }
+
+    /* 6. SOLDAKİ NAVİGASYON (SİDEBAR) RENKLERİ */
+    #nav-sidebar {
+        background: #ffffff !important;
+        border-right: 1px solid var(--border-light) !important;
+    }
+
+    #nav-sidebar .module th a { color: var(--primary-green) !important; }
+    
+    /* 7. DARK MODE ZORLAMASINI TAMAMEN SİL */
     @media (prefers-color-scheme: dark) {
-        body, #content, .module, tr.row1, tr.row2, .module table tbody tr { 
-            background-color: #ffffff !important; 
-            color: var(--text-dark) !important; 
+        body, #content, .module, .form-row, .submit-row, #nav-sidebar { 
+            background-color: var(--bg-soft) !important; 
+            color: var(--text-main) !important; 
         }
-        #header, .module h2, #content-related h2 { background: var(--primary-green) !important; color: white !important; }
+        .form-row, .submit-row { background: #ffffff !important; }
+        .module h2 { background: var(--primary-green) !important; color: white !important; }
     }
 </style>
 
 <script>
-    // TRACKİNG yazan yeri TRACKING olarak değiştirmek için küçük bir script
     document.addEventListener("DOMContentLoaded", function() {
-        const headers = document.querySelectorAll('.module h2, .module caption');
-        headers.forEach(header => {
-            if (header.textContent.includes('TRACKİNG')) {
-                header.textContent = header.textContent.replace('TRACKİNG', 'TRACKING');
+        const headers = document.querySelectorAll('.module h2, .module caption, label, a');
+        headers.forEach(el => {
+            if (el.textContent.includes('TRACKİNG')) {
+                el.textContent = el.textContent.replace('TRACKİNG', 'TRACKING');
             }
         });
     });
