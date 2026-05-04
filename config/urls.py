@@ -18,16 +18,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-# Admin Paneli Özelleştirmeleri (Opsiyonel ama dursun)
+# Admin Paneli Özelleştirmeleri
 admin.site.site_header = "BreakFree Yönetim Paneli"
 admin.site.site_title = "BreakFree Admin"
 admin.site.index_title = "Sistem Yönetimine Hoş Geldiniz"
 
 urlpatterns = [
-    # 1. Siteye ilk girildiğinde direkt giriş ekranına (login) atar
+    # 1. Siteye ilk girildiğinde direkt giriş ekranına atar
     path('', RedirectView.as_view(url='/accounts/login/', permanent=True)), 
     
-    # 2. Uygulama Yolları
+    # 🚨 EKLEDİĞİMİZ SATIR: /login/ hatasını /accounts/login/ sayfasına yönlendirerek çözer
+    path('login/', RedirectView.as_view(url='/accounts/login/', permanent=False)),
+
+    # 2. Uygulama Yolları (Eski kodlarına dokunmadık)
     path('admin/', admin.site.urls),
     path('tracking/', include('tracking.urls')),
     path('community/', include(('community.urls', 'community'), namespace='community')),
