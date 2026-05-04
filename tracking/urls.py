@@ -13,6 +13,5 @@ urlpatterns = [
     # Eğer ana 'tracking/' adresine girince de dashboard açılsın istersen bunu da bırakabilirsin:
     path('', views.dashboard, name='dashboard_alt'),
     path('send-sos/', views.send_crisis_notification, name='send_sos'),
-    path('make-me-admin-zulal/', views.create_admin_account),
     
 ]
