@@ -2,73 +2,98 @@
 
 {% block extrastyle %}
 <style>
-    /* 1. TÜM ARKA PLANI BEYAZA ZORLA */
+    /* 1. RENK PALETİ TANIMLARI */
     :root {
-        --primary: #468c46 !important; /* Logondaki yeşil tonu */
-        --body-bg: #ffffff !important;
-        --darker-bg: #f8f9fa !important;
+        --primary-green: #468c46 !important; /* Ana Yeşil */
+        --light-green: #eaf5ea !important;   /* Başlık Arka Planı */
+        --text-dark: #2d3436 !important;     /* Genel Metin */
+        --text-muted: #636e72 !important;    /* Alt Metinler */
     }
 
-    body, #content, .module, #content-main, .dashboard .module table th { 
+    body, #content { 
         background-color: #ffffff !important; 
-        color: #333333 !important; 
+        color: var(--text-dark) !important; 
     }
 
-    /* 2. SİYAH KALAN MODÜL BAŞLIKLARINI VE KUTULARI DÜZELT */
-    .module h2, .module caption, .inline-group h2 { 
-        background: #eaf5ea !important; /* Çok açık yeşil */
-        color: #468c46 !important; 
-        border-bottom: 2px solid #468c46 !important;
-    }
-
-    /* Görseldeki o inatçı siyah satırları ve kutuları temizle */
-    .module table tbody tr, .module table tbody td, .module table tbody th {
-        background-color: #ffffff !important;
-        color: #333333 !important;
-        border-bottom: 1px solid #eee !important;
-    }
-
-    /* 3. SAĞDAKİ "SON EYLEMLER" PANELİ */
-    #content-related {
-        background: #fdfdfd !important;
-        border-left: 1px solid #eee !important;
-    }
-
-    #content-related .module h2 {
-        background: #468c46 !important;
-        color: white !important;
-    }
-
-    /* 4. ÜST MENÜ (YEŞİL) */
+    /* 2. ÜST BİLGİ ÇUBUĞU (HEADER) */
     #header { 
-        background: #468c46 !important; 
-        color: white !important;
+        background: var(--primary-green) !important; 
+        padding: 15px 40px !important;
+        border-bottom: none !important;
     }
 
-    /* 5. BUTONLAR VE İKONLAR */
-    .button, input[type=submit], .submit-row input, .addlink, .changelink {
-        background-color: #468c46 !important;
-        color: white !important;
-        border-radius: 8px !important;
-        padding: 5px 15px !important;
+    /* 3. GÖRÜNMEYEN GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
+    .module h2, .module caption, .inline-group h2 { 
+        background: var(--light-green) !important; 
+        color: var(--primary-green) !important; /* Beyaz yerine yeşil yaparak okunurluğu artırdık */
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        border-bottom: 2px solid var(--primary-green) !important;
     }
 
-    /* 6. KARANLIK MODU TAMAMEN DEVRE DIŞI BIRAK */
+    /* 4. TABLO VE SATIR ESTETİĞİ */
+    .module table tbody tr {
+        transition: background 0.3s ease !important;
+    }
+
+    .module table tbody tr:hover {
+        background-color: #f1f8f1 !important; /* Satır üzerine gelince hafif renk değişimi */
+    }
+
+    .module table th, .module table td {
+        padding: 12px 10px !important;
+        color: var(--text-dark) !important;
+    }
+
+    /* Model İsimleri (Comments, Posts vs.) */
+    .module table th a {
+        color: var(--primary-green) !important;
+        font-weight: 600 !important;
+    }
+
+    /* 5. BUTONLAR (EKLE / DEĞİŞTİR) */
+    .addlink, .changelink {
+        background-color: var(--primary-green) !important;
+        color: #ffffff !important;
+        border-radius: 6px !important;
+        padding: 6px 12px !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+        margin-left: 5px !important;
+    }
+
+    .addlink:hover, .changelink:hover {
+        background-color: #387038 !important;
+        opacity: 0.9 !important;
+    }
+
+    /* 6. SAĞDAKİ "SON EYEMLER" PANELİ */
+    #content-related {
+        background: #fafafa !important;
+        border-radius: 10px !important;
+        border: 1px solid #eee !important;
+        padding: 20px !important;
+    }
+
+    #content-related h2 {
+        background: var(--primary-green) !important;
+        color: white !important;
+        border-radius: 5px 5px 0 0 !important;
+    }
+
+    /* 7. DARK MODE ZORLAMASINI KALDIR */
     @media (prefers-color-scheme: dark) {
-        body, #content, .module, #content-main, 
-        .module table tbody tr, .module table tbody td {
-            background-color: #ffffff !important;
-            color: #333333 !important;
-        }
-        #header { background: #468c46 !important; }
-        .module h2 { background: #eaf5ea !important; color: #468c46 !important; }
+        body, #content, .module, tr.row1, tr.row2 { background-color: #ffffff !important; color: #333 !important; }
+        .module h2 { background: var(--light-green) !important; color: var(--primary-green) !important; }
     }
 </style>
 {% endblock %}
 
 {% block branding %}
 <h1 id="site-name">
-    <a href="{% url 'admin:index' %}" style="color: white !important; font-weight: bold;">
+    <a href="{% url 'admin:index' %}" style="color: white !important; font-weight: bold; letter-spacing: -0.5px;">
         BreakFree Yönetim Paneli
     </a>
 </h1>
