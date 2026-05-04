@@ -39,7 +39,7 @@
                     </div>
                 </div>
 
-                <!-- BAŞARI ROZETLERİ ALANI -->
+                <!-- 🚨 YENİ: BAŞARI ROZETLERİ ALANI -->
                 <div class="card shadow-sm border-0 mb-4 bg-white">
                     <div class="card-body p-3">
                         <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">
@@ -54,14 +54,13 @@
                                 </div>
                             {% empty %}
                                 <div class="text-center py-2 px-3">
-                                    <p class="small text-muted fst-italic mb-0">Henüz rozet kazanılmadı.</p>
+                                    <p class="small text-muted fst-italic mb-0">Henüz rozet kazanılmadı. 7 günlük temiz bir seri ile ilk rozetini alabilirsin!</p>
                                 </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
-                
-                <!-- BAŞARI ORANI -->
+
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body">
                         <h6 class="text-uppercase text-muted fw-bold mb-3 small">BU AYIN BAŞARI ORANI</h6>
@@ -74,17 +73,27 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <p class="mb-1 small text-muted fw-bold text-uppercase">Bağımlılık: <span class="text-dark">{{ goal.get_dependency_type_display }}</span></p>
+                        <p class="mb-0 small text-muted fw-bold text-uppercase">Anket Riski: <span class="text-{{ report_color }}">{{ risk_level }}</span></p>
+                        <hr class="my-2 opacity-50">
+                        <div class="small text-muted fst-italic">Son verilere göre oluşturulan risk profilidir.</div>
+                    </div>
+                </div>
             </div>
 
             <!-- SAĞ KOLON: Analiz ve Grafik -->
             <div class="col-md-8">
+                <!-- AYLIK NAVİGASYON -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <a href="?goal_id={{ goal.id }}&month={{ prev_month }}" class="btn btn-sm btn-light border shadow-sm px-3">←</a>
                     <h6 class="mb-0 fw-bold text-muted text-uppercase small">Aylık Gelişim Raporu</h6>
                     <a href="?goal_id={{ goal.id }}&month={{ next_month }}" class="btn btn-sm btn-light border shadow-sm px-3">→</a>
                 </div>
 
-                <!-- DURUM ANALİZ KARTI -->
+                <!-- 🚨 DİNAMİK ANALİZ KARTI -->
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-cpu me-2"></i>Profesyonel Durum Analizi</h5>
@@ -94,11 +103,24 @@
                         <p class="fs-5 border-start border-4 border-{{ report_color }} ps-3 text-muted fst-italic" style="line-height: 1.6;">
                             "{{ report_text }}"
                         </p>
+                        
+                        <div class="row text-center mb-4 g-0 border rounded py-3 bg-light bg-opacity-50">
+                            <div class="col-6 border-end">
+                                <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.6rem;">AYLIK ORT. ZORLANMA</small>
+                                <h4 class="fw-bold mb-0 text-dark">{{ avg_craving }} / 10</h4>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block fw-bold text-uppercase mb-1" style="font-size: 0.6rem;">BİYOLOJİK DURUM</small>
+                                <h4 class="fw-bold mb-0 text-success">{{ bio_status }}</h4>
+                            </div>
+                        </div>
+
+                        <h6 class="text-center small fw-bold text-muted text-uppercase mb-3">Zorlanma Trendi Grafiği</h6>
                         <div style="height: 250px;"><canvas id="cravingChart"></canvas></div>
                     </div>
                 </div>
 
-                <!-- GÜNLÜK VERİ GİRİŞ FORMU -->
+                <!-- VERİ GİRİŞ FORMU -->
                 <div class="card shadow-sm border-0 border-top border-primary border-4 rounded-4">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-4 text-primary"><i class="bi bi-plus-circle-fill me-2"></i>Bugünkü Durumunu Kaydet</h5>
@@ -106,6 +128,7 @@
                             {% csrf_token %}
                             <div class="row g-3">
                                 <div class="col-12" style="display:none;">{{ log_form.goal }}</div>
+                                
                                 <div class="col-md-6">
                                     <label class="small fw-bold text-muted mb-1">Tarih</label>
                                     {{ log_form.date }}
@@ -114,10 +137,24 @@
                                     <label class="small fw-bold text-muted mb-1">Zorlanma Seviyesi (1-10)</label>
                                     {{ log_form.craving_level }}
                                 </div>
+                                
                                 <div class="col-12">
-                                    <label class="small fw-bold text-muted mb-1">Süreci Ne Tetikledi?</label>
+                                    <label class="small fw-bold text-muted mb-1">Süreci Ne Tetikledi? (Trigger)</label>
                                     {{ log_form.trigger }}
                                 </div>
+                                
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">Günlük Not</label>
+                                    {{ log_form.daily_note }}
+                                </div>
+
+                                <div class="col-12 text-center py-2">
+                                    <div class="form-check form-switch d-inline-block">
+                                        {{ log_form.relapse }}
+                                        <label class="ms-2 fw-bold text-danger small">Bozdum (Relapse)</label>
+                                    </div>
+                                </div>
+                                
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow">VERİYİ KAYDET</button>
                                 </div>
@@ -127,42 +164,11 @@
                 </div>
             </div>
         </div>
-
-    {% elif request.GET.new_goal %}
-        <!-- 🚨 YENİ HEDEF BAŞLATMA FORMU (Burayı ekledik) -->
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card shadow-lg border-0 rounded-4">
-                    <div class="card-body p-5">
-                        <div class="text-center mb-4">
-                            <i class="bi bi-plus-circle text-primary display-4"></i>
-                            <h3 class="fw-bold mt-2">Yeni Bir Hedef Belirle</h3>
-                            <p class="text-muted">Kurtulmak istediğin bağımlılığı seç ve temiz bir sayfa aç.</p>
-                        </div>
-                        <form method="POST" action="{% url 'tracking:create_goal' %}">
-                            {% csrf_token %}
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small">Bağımlılık Türü</label>
-                                {{ goal_form.dependency_type }}
-                            </div>
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small">Neden Bırakmak İstiyorsun?</label>
-                                {{ goal_form.description }}
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow">HEDEFİ BAŞLAT</button>
-                            <a href="{% url 'tracking:dashboard' %}" class="btn btn-link w-100 mt-2 text-decoration-none text-muted small">Vazgeç</a>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     {% else %}
-        <!-- BOŞ DURUM EKRANI -->
         <div class="text-center py-5">
             <i class="bi bi-clipboard2-plus display-1 text-muted opacity-25"></i>
             <h4 class="mt-3 text-muted">Henüz aktif bir takibiniz bulunmuyor.</h4>
-            <a href="?new_goal=true" class="btn btn-primary rounded-pill px-5 mt-3 shadow-lg">Yeni Hedef Başlat</a>
+            <a href="?new_goal=true" class="btn btn-primary rounded-pill px-5 mt-3">Yeni Hedef Başlat</a>
         </div>
     {% endif %}
 </div>
@@ -173,14 +179,13 @@
     document.addEventListener("DOMContentLoaded", function() {
         const chartElement = document.getElementById('cravingChart');
         if (chartElement) {
-            // 🚨 ÖNEMLİ: default:"[]" sayesinde veritabanı boş olsa bile JavaScript çökmez.
-            const labels = {{ chart_labels|safe|default:"[]" }}; 
-            const data = {{ chart_data|safe|default:"[]" }};
+            const labels = {{ chart_labels|safe }};
+            const data = {{ chart_data|safe }};
             
             new Chart(chartElement, {
                 type: 'line',
                 data: {
-                    labels: labels.length ? labels : ['Kayıt Yok'],
+                    labels: labels.length ? labels : ['Bu ay kayıt bulunamadı'],
                     datasets: [{
                         label: 'Zorlanma Seviyesi',
                         data: data.length ? data : [0],
@@ -188,6 +193,8 @@
                         backgroundColor: 'rgba(13, 110, 253, 0.1)',
                         tension: 0.4,
                         fill: true,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#0d6efd',
                         borderWidth: 3
                     }]
                 },
@@ -195,7 +202,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, max: 10 },
+                        y: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } },
                         x: { grid: { display: false } }
                     },
                     plugins: { legend: { display: false } }
@@ -204,4 +211,10 @@
         }
     });
 </script>
+
+<style>
+    .bg-info { background-color: #0dcaf0 !important; }
+    .border-info { border-color: #0dcaf0 !important; }
+    .text-info { color: #0dcaf0 !important; }
+</style>
 {% endblock %}
