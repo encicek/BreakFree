@@ -1,0 +1,112 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<style>
+    /* 1. TÜM DJANGO KALINTILARINI BEYAZA BOYAYARAK VE GİZLEYEREK YOK ET */
+    #header, .breadcrumb, #branding, #user-tools, .sidebar, #nav-sidebar, 
+    .toggle-nav-sidebar, #content-title, h1 {
+        display: none !important;
+        visibility: hidden !important;
+        background: transparent !important;
+        color: transparent !important;
+    }
+
+    /* 2. EKRANI TAMAMEN SIFIRLA VE MERKEZLE */
+    html, body {
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #f8f9fa !important;
+        overflow: hidden !important;
+    }
+
+    /* Django'nun kapsayıcılarının yarattığı tüm boşlukları zorla kaldır */
+    #container, #content, .main, .content {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: 100vh !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: fixed !important; /* Ekrandaki konumunu sabitle */
+        top: 0 !important;
+        left: 0 !important;
+    }
+
+    /* 3. SENİN GİRİŞ KUTUN */
+    .card { 
+        border: none !important;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+        background: white !important;
+        z-index: 9999 !important;
+    }
+
+    .bg-dark-header {
+        background-color: #212529 !important;
+    }
+
+    .input-group-text, .form-control {
+        background-color: #f8f9fa !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card rounded-4 overflow-hidden">
+    <!-- Üst Bar -->
+    <div class="bg-dark-header py-4 text-center">
+        <i class="bi bi-shield-lock-fill fs-1 text-success"></i>
+        <p class="text-white-50 small mb-0 mt-2 text-uppercase fw-bold">BreakFree Yönetim</p>
+    </div>
+    
+    <div class="card-body p-4 p-md-5">
+        <h2 class="text-center fw-bold mb-2">Oturum Aç</h2>
+        <p class="text-center text-muted small mb-4">Lütfen yönetici bilgilerinizi girin.</p>
+        
+        {% if form.errors %}
+            <div class="alert alert-danger py-2 text-center small border-0 mb-4">
+                Giriş bilgileri hatalı.
+            </div>
+        {% endif %}
+
+        <form action="{{ app_path }}" method="post" id="login-form">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold small text-secondary">YÖNETİCİ ADI</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary"><i class="bi bi-person-badge"></i></span>
+                    <input type="text" name="username" class="form-control" placeholder="zulal" required>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold small text-secondary">PAROLA</label>
+                <div class="input-group">
+                    <span class="input-group-text text-secondary"><i class="bi bi-key-fill"></i></span>
+                    <input type="password" name="password" class="form-control" placeholder="•••••" required>
+                </div>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn btn-success rounded-pill fw-bold py-2 shadow-sm" style="background-color: #4d845d !important; border: none;">
+                    Yönetim Paneline Gir
+                </button>
+            </div>
+        </form>
+
+        <div class="text-center mt-4">
+            <a href="/" class="text-decoration-none text-muted small">
+                <i class="bi bi-arrow-left-circle me-1"></i> Siteye Geri Dön
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

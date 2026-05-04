@@ -16,11 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.auth import views as auth_views # Eksik olan ve hatayı çözen satır bu!
 
-# config/urls.py
+# Admin Paneli Özelleştirmeleri
+admin.site.site_header = "BreakFree Yönetim Paneli"
+admin.site.site_title = "BreakFree Admin"
+admin.site.index_title = "Sistem Yönetimine Hoş Geldiniz"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Login sayfası için auth_views artık tanımlı olduğu için hata vermeyecek
+    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html', next_page='/tracking/'), name='login'),
     path('tracking/', include('tracking.urls')),
     path('community/', include(('community.urls', 'community'), namespace='community')),
     path('accounts/', include('accounts.urls')),
