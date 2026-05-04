@@ -165,20 +165,26 @@ def notifications(request):
 @login_required
 def user_list(request):
     search_query = request.GET.get('search', '').strip()
+    
+    # Zaten arkadaş olanları hariç tutmak için mevcut mantık
     friends_relations = Friendship.objects.filter(
         Q(from_user=request.user) | Q(to_user=request.user)
-    ).values_list('from_user_id', 'to_user_id')
+    ).values_list('from_user_id', 'to_user_id', flat=False)
 
     exclude_ids = {request.user.id}
     for f_id, t_id in friends_relations:
         exclude_ids.add(f_id)
         exclude_ids.add(t_id)
 
-    users_queryset = User.objects.exclude(id__in=exclude_ids)
+    # --- KRİTİK GÜNCELLEME BURASI ---
+    # is_superuser=False ekleyerek adminleri listeden tamamen çıkartıyoruz
+    users_queryset = User.objects.filter(is_superuser=False).exclude(id__in=exclude_ids)
+    
     if search_query:
         users = users_queryset.filter(username__icontains=search_query)
     else:
         users = users_queryset
+        
     return render(request, 'community/user_list.html', {'users': users, 'search_query': search_query})
 
 # --- STANDART İŞLEMLER ---
