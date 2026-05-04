@@ -9,7 +9,7 @@ import datetime
 import json
 import random
 
-# 1. ANKET SORULARI (Değişmedi)
+# 1. ANKET SORULARI
 DEPENDENCY_SURVEYS = {
     'sigara': [
         {'id': 1, 'text': 'Günde ortalama kaç adet sigara tüketiyorsunuz?', 'choices': [('0', '10 veya daha az'), ('10', '11-20 adet'), ('20', '21-30 adet'), ('30', '31 ve üzeri')]},
@@ -55,76 +55,83 @@ def dashboard(request):
     else:
         goal = all_active_goals.order_by('-id').first()
     
-    if goal:
-        today = datetime.date.today()
-        start_of_month = datetime.date(current_year, current_month, 1)
-        if current_month == 12:
-            end_of_month = datetime.date(current_year + 1, 1, 1)
-        else:
-            end_of_month = datetime.date(current_year, current_month + 1, 1)
-        
-        last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
-        if last_relapse:
-            current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
-        else:
-            current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
-        
-        current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
-        monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
-        days_in_month = (end_of_month - start_of_month).days
-        success_rate = int((monthly_clean_count / days_in_month) * 100) if days_in_month > 0 else 0
+    # Eğer "Yeni Hedef" modu aktifse veya hiç hedef yoksa
+    if not goal or request.GET.get('new_goal') == 'true':
+        # Hedef olsa bile 'new_goal' geldiyse kullanıcıyı seçim ekranına hapsediyoruz
+        return render(request, 'tracking/dashboard.html', {
+            'goal': None, 
+            'all_active_goals': all_active_goals,
+            'new_goal_mode': True
+        })
 
-        analysis_options = {
-            "level_1": ["Vücudun dopamin dengesini yeniden kurmaya başladı!", "Beynindeki Prefrontal Korteks direksiyonun başında!"],
-            "level_2": ["İraden bir kas gibi güçleniyor!", "Beyninde nöroplastisite gerçekleşiyor!"],
-            "level_3": ["Amigdala şu an biraz gürültülü olabilir.", "Stratejini değiştirme zamanı gelmiş olabilir."]
-        }
+    today = datetime.date.today()
+    start_of_month = datetime.date(current_year, current_month, 1)
+    if current_month == 12:
+        end_of_month = datetime.date(current_year + 1, 1, 1)
+    else:
+        end_of_month = datetime.date(current_year, current_month + 1, 1)
+    
+    last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
+    if last_relapse:
+        current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
+    else:
+        current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
+    
+    current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
+    monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
+    days_in_month = (end_of_month - start_of_month).days
+    success_rate = int((monthly_clean_count / days_in_month) * 100) if days_in_month > 0 else 0
 
-        if success_rate >= 90:
-            report_title, report_color = "Mükemmel İstikrar", "success"
-            report_text = random.choice(analysis_options["level_1"])
-        elif success_rate >= 70:
-            report_title, report_color = "Güçlü Gelişim", "info"
-            report_text = random.choice(analysis_options["level_2"])
-        else:
-            report_title, report_color = "Dikkat: Riskli Bölge", "warning"
-            report_text = random.choice(analysis_options["level_3"])
+    analysis_options = {
+        "level_1": ["Vücudun dopamin dengesini yeniden kurmaya başladı!", "Beynindeki Prefrontal Korteks direksiyonun başında!"],
+        "level_2": ["İraden bir kas gibi güçleniyor!", "Beyninde nöroplastisite gerçekleşiyor!"],
+        "level_3": ["Amigdala şu an biraz gürültülü olabilir.", "Stratejini değiştirme zamanı gelmiş olabilir."]
+    }
 
-        chart_labels = [log.date.strftime('%d %b') for log in current_month_logs]
-        chart_data = [log.craving_level for log in current_month_logs]
-        avg_craving = sum(chart_data) / len(chart_data) if chart_data else 0
-        
-        total_clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
-        if total_clean_days >= 30: bio_status = "Tam Onarım"
-        elif total_clean_days >= 7: bio_status = "Hücresel Yenilenme"
-        elif total_clean_days >= 1: bio_status = "Onarım Başladı"
-        else: bio_status = "Stabilizasyon"
+    if success_rate >= 90:
+        report_title, report_color = "Mükemmel İstikrar", "success"
+        report_text = random.choice(analysis_options["level_1"])
+    elif success_rate >= 70:
+        report_title, report_color = "Güçlü Gelişim", "info"
+        report_text = random.choice(analysis_options["level_2"])
+    else:
+        report_title, report_color = "Dikkat: Riskli Bölge", "warning"
+        report_text = random.choice(analysis_options["level_3"])
 
-        user_badges = UserBadge.objects.filter(user=request.user).select_related('badge')
-        has_entry_today = goal.logs.filter(date=today).exists()
-        risk_level = "Yüksek" if goal.initial_score > 70 else "Orta" if goal.initial_score > 35 else "Düşük"
+    chart_labels = [log.date.strftime('%d %b') for log in current_month_logs]
+    chart_data = [log.craving_level for log in current_month_logs]
+    avg_craving = sum(chart_data) / len(chart_data) if chart_data else 0
+    
+    total_clean_days = goal.logs.filter(relapse=False).values('date').distinct().count()
+    if total_clean_days >= 30: bio_status = "Tam Onarım"
+    elif total_clean_days >= 7: bio_status = "Hücresel Yenilenme"
+    elif total_clean_days >= 1: bio_status = "Onarım Başladı"
+    else: bio_status = "Stabilizasyon"
 
-        if request.method == 'POST':
-            log_form = DailyLogForm(request.POST, user=request.user)
-            if log_form.is_valid():
-                log = log_form.save(commit=False)
-                log.save()
-                return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}&month={current_month}')
-        else:
-            log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
+    user_badges = UserBadge.objects.filter(user=request.user).select_related('badge')
+    has_entry_today = goal.logs.filter(date=today).exists()
+    risk_level = "Yüksek" if goal.initial_score > 70 else "Orta" if goal.initial_score > 35 else "Düşük"
 
-        context = {
-            'goal': goal, 'all_active_goals': all_active_goals, 'existing_types': list(existing_types),
-            'clean_days': current_streak, 'monthly_count': monthly_clean_count, 'success_rate': success_rate,
-            'risk_level': risk_level, 'log_form': log_form, 'current_month': current_month, 'current_year': current_year,
-            'chart_labels': json.dumps(chart_labels), 'chart_data': json.dumps(chart_data),
-            'report_title': report_title, 'report_text': report_text, 'report_color': report_color,
-            'avg_craving': round(avg_craving, 1), 'bio_status': bio_status, 'user_badges': user_badges,
-            'has_entry_today': has_entry_today, 'prev_month': 12 if current_month == 1 else current_month - 1,
-            'next_month': 1 if current_month == 12 else current_month + 1,
-        }
-        return render(request, 'tracking/dashboard.html', context)
-    return render(request, 'tracking/dashboard.html', {'goal': None, 'all_active_goals': all_active_goals})
+    if request.method == 'POST':
+        log_form = DailyLogForm(request.POST, user=request.user)
+        if log_form.is_valid():
+            log = log_form.save(commit=False)
+            log.save()
+            return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}&month={current_month}')
+    else:
+        log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
+
+    context = {
+        'goal': goal, 'all_active_goals': all_active_goals, 'existing_types': list(existing_types),
+        'clean_days': current_streak, 'monthly_count': monthly_clean_count, 'success_rate': success_rate,
+        'risk_level': risk_level, 'log_form': log_form, 'current_month': current_month, 'current_year': current_year,
+        'chart_labels': json.dumps(chart_labels), 'chart_data': json.dumps(chart_data),
+        'report_title': report_title, 'report_text': report_text, 'report_color': report_color,
+        'avg_craving': round(avg_craving, 1), 'bio_status': bio_status, 'user_badges': user_badges,
+        'has_entry_today': has_entry_today, 'prev_month': 12 if current_month == 1 else current_month - 1,
+        'next_month': 1 if current_month == 12 else current_month + 1,
+    }
+    return render(request, 'tracking/dashboard.html', context)
 
 # 3. SOS FONKSİYONU
 @login_required(login_url='/accounts/login/')
@@ -165,8 +172,13 @@ def survey_view(request):
 def create_goal(request):
     initial_score = request.session.get('calculated_score')
     chosen_type = request.session.get('chosen_type')
-    if initial_score is None: return redirect('/tracking/dashboard/?new_goal=true')
+    
+    # Eğer puan yoksa, kullanıcıyı anket seçim sayfasına (dashboard içindeki seçime) gönder
+    if initial_score is None: 
+        return redirect('/tracking/dashboard/?new_goal=true')
+        
     existing_goal = DependencyGoal.objects.filter(user=request.user, dependency_type=chosen_type).first()
+    
     if request.method == 'POST':
         if existing_goal:
             if int(initial_score) > 0: existing_goal.initial_score = int(initial_score)
@@ -180,9 +192,17 @@ def create_goal(request):
                 goal.dependency_type = chosen_type
                 goal.initial_score = int(initial_score)
                 goal.save()
+        
+        # İşlem bitince oturumu temizle
         request.session.pop('calculated_score', None)
         request.session.pop('chosen_type', None)
         return redirect('tracking:dashboard')
     else:
         form = GoalForm(initial={'dependency_type': chosen_type})
-    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal})
+        
+    return render(request, 'tracking/create_goal.html', {
+        'form': form, 
+        'score': initial_score, 
+        'exists': existing_goal,
+        'type': chosen_type
+    })
