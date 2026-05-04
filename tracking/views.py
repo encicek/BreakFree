@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
+from django.contrib.auth.models import User
 from .models import DependencyGoal, DailyLog, Badge, UserBadge
 from community.models import Friendship, Notification 
 from .forms import GoalForm, DailyLogForm
@@ -9,7 +10,14 @@ import datetime
 import json
 import random
 
-# 1. ANKET SORULARI
+# --- GEÇİCİ ADMİN OLUŞTURMA ---
+def create_admin_account(request):
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@example.com', 'sifre12345')
+        return HttpResponse("Admin hesabı oluşturuldu!")
+    return HttpResponse("Admin zaten mevcut.")
+
+# 1. ANKET SORULARI (Mevcut haliyle korundu)
 DEPENDENCY_SURVEYS = {
     'sigara': [
         {'id': 1, 'text': 'Günde ortalama kaç adet sigara tüketiyorsunuz?', 'choices': [('0', '10 veya daha az'), ('10', '11-20 adet'), ('20', '21-30 adet'), ('30', '31 ve üzeri')]},
@@ -55,9 +63,7 @@ def dashboard(request):
     else:
         goal = all_active_goals.order_by('-id').first()
     
-    # Eğer "Yeni Hedef" modu aktifse veya hiç hedef yoksa
     if not goal or request.GET.get('new_goal') == 'true':
-        # Hedef olsa bile 'new_goal' geldiyse kullanıcıyı seçim ekranına hapsediyoruz
         return render(request, 'tracking/dashboard.html', {
             'goal': None, 
             'all_active_goals': all_active_goals,
@@ -66,17 +72,42 @@ def dashboard(request):
 
     today = datetime.date.today()
     start_of_month = datetime.date(current_year, current_month, 1)
+    
     if current_month == 12:
         end_of_month = datetime.date(current_year + 1, 1, 1)
     else:
         end_of_month = datetime.date(current_year, current_month + 1, 1)
     
+    # Mevcut Seri Hesaplama
     last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
     if last_relapse:
         current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
     else:
         current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
     
+    # --- ROZET KONTROL VE ATAMA MANTIĞI ---
+    def check_and_assign_badges(user, streak):
+        # Veritabanında tanımlı olan rozetleri çek
+        available_badges = Badge.objects.filter(required_days__lte=streak)
+        for badge in available_badges:
+            # Kullanıcıda bu rozet yoksa ekle
+            UserBadge.objects.get_or_create(user=user, badge=badge)
+
+    # Veri girişi olduğunda tetiklenir
+    if request.method == 'POST':
+        log_form = DailyLogForm(request.POST, user=request.user)
+        if log_form.is_valid():
+            log = log_form.save(commit=False)
+            log.save()
+            # Log kaydedildikten sonra rozetleri kontrol et
+            check_and_assign_badges(request.user, current_streak)
+            return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}&month={current_month}')
+    else:
+        # Sayfa her yüklendiğinde de rozetleri kontrol et (Geçmiş veriler için)
+        check_and_assign_badges(request.user, current_streak)
+        log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
+
+    # ... (Geri kalan Dashboard mantığı - Analizler, Grafikler vb. - Değişmedi)
     current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
     monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
     days_in_month = (end_of_month - start_of_month).days
@@ -112,15 +143,6 @@ def dashboard(request):
     has_entry_today = goal.logs.filter(date=today).exists()
     risk_level = "Yüksek" if goal.initial_score > 70 else "Orta" if goal.initial_score > 35 else "Düşük"
 
-    if request.method == 'POST':
-        log_form = DailyLogForm(request.POST, user=request.user)
-        if log_form.is_valid():
-            log = log_form.save(commit=False)
-            log.save()
-            return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}&month={current_month}')
-    else:
-        log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
-
     context = {
         'goal': goal, 'all_active_goals': all_active_goals, 'existing_types': list(existing_types),
         'clean_days': current_streak, 'monthly_count': monthly_clean_count, 'success_rate': success_rate,
@@ -133,7 +155,7 @@ def dashboard(request):
     }
     return render(request, 'tracking/dashboard.html', context)
 
-# 3. SOS FONKSİYONU
+# ... (SOS, Survey ve Create Goal fonksiyonları mevcut haliyle korundu)
 @login_required(login_url='/accounts/login/')
 def send_crisis_notification(request):
     if request.method == 'POST':
@@ -150,7 +172,6 @@ def send_crisis_notification(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'invalid_method'}, status=400)
 
-# 4. ANKET VE HEDEF OLUŞTURMA
 @login_required(login_url='/accounts/login/')
 def survey_view(request):
     dep_type = request.GET.get('type', 'sigara')
@@ -172,13 +193,9 @@ def survey_view(request):
 def create_goal(request):
     initial_score = request.session.get('calculated_score')
     chosen_type = request.session.get('chosen_type')
-    
-    # Eğer puan yoksa, kullanıcıyı anket seçim sayfasına (dashboard içindeki seçime) gönder
     if initial_score is None: 
         return redirect('/tracking/dashboard/?new_goal=true')
-        
     existing_goal = DependencyGoal.objects.filter(user=request.user, dependency_type=chosen_type).first()
-    
     if request.method == 'POST':
         if existing_goal:
             if int(initial_score) > 0: existing_goal.initial_score = int(initial_score)
@@ -192,17 +209,9 @@ def create_goal(request):
                 goal.dependency_type = chosen_type
                 goal.initial_score = int(initial_score)
                 goal.save()
-        
-        # İşlem bitince oturumu temizle
         request.session.pop('calculated_score', None)
         request.session.pop('chosen_type', None)
         return redirect('tracking:dashboard')
     else:
         form = GoalForm(initial={'dependency_type': chosen_type})
-        
-    return render(request, 'tracking/create_goal.html', {
-        'form': form, 
-        'score': initial_score, 
-        'exists': existing_goal,
-        'type': chosen_type
-    })
+    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal, 'type': chosen_type})
