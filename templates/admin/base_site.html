@@ -2,99 +2,97 @@
 
 {% block extrastyle %}
 <style>
-    /* --- BREAKFREE UNIFIED DESIGN SYSTEM --- */
+    /* --- BREAKFREE UNIFIED GREEN & WHITE DESIGN --- */
     :root {
-        --primary-green: #468c46 !important;
-        --bg-soft: #f4f7f4 !important;
-        --text-main: #333333 !important;
-        --border-light: #d1d1d1 !important;
+        --breakfree-green: #468c46 !important; /* Giriş ekranındaki ana yeşilin */
+        --bg-clean: #ffffff !important;
+        --bg-soft-grey: #f8f9fa !important;
     }
 
-    /* 1. GENEL ARKA PLAN VE FORM ALANLARI */
-    body, #content, .change-form, .module, #content-main { 
-        background-color: var(--bg-soft) !important; 
-        color: var(--text-main) !important;
+    /* 1. TÜM SİYAHLIKLARI VE KOYU GRİLERİ YOK ET */
+    body, #content, .module, #content-main, .change-form, 
+    .submit-row, .paginator, #footer, #nav-sidebar { 
+        background-color: var(--bg-clean) !important; 
+        color: #333 !important; 
+        box-shadow: none !important;
+        border-color: #eee !important;
     }
 
-    /* 2. ÜST BAR (HEADER & BREADCRUMBS) */
+    /* 2. ÜST BİLGİ VE NAVİGASYON (GİRİŞ EKRANIYLA AYNI) */
     #header { 
-        background: var(--primary-green) !important; 
-        padding: 12px 40px !important;
+        background: var(--breakfree-green) !important; 
+        color: white !important;
+        padding: 15px 40px !important;
     }
 
     div.breadcrumbs {
-        background: #ffffff !important;
-        color: var(--primary-green) !important;
-        border-bottom: 1px solid var(--border-light) !important;
+        background: var(--bg-soft-grey) !important;
+        color: var(--breakfree-green) !important;
+        border-bottom: 1px solid #ddd !important;
         padding: 10px 40px !important;
     }
-
-    div.breadcrumbs a { color: var(--primary-green) !important; font-weight: 600 !important; }
+    div.breadcrumbs a { color: var(--breakfree-green) !important; font-weight: 600 !important; }
 
     /* 3. GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
     .module h2, .module caption, .inline-group h2, #content-related h2 { 
-        background: var(--primary-green) !important; 
+        background: var(--breakfree-green) !important; 
         color: #ffffff !important; 
-        font-weight: 600 !important;
-        text-transform: uppercase !important;
-        padding: 12px 15px !important;
-        border-radius: 4px 4px 0 0 !important;
-    }
-
-    /* 4. FORM İÇİNDEKİ SİYAHLIKLARI VE ÇİZGİLERİ TEMİZLE */
-    .form-row {
-        background: #ffffff !important;
-        border-bottom: 1px solid #eeeeee !important;
-        padding: 15px !important;
-    }
-
-    label { color: #555555 !important; font-weight: 600 !important; }
-
-    input, select, textarea {
-        border: 1px solid var(--border-light) !important;
-        border-radius: 4px !important;
-        padding: 5px !important;
-    }
-
-    /* 5. ALT BUTON BARI (SUBMIT ROW) - O SİYAH ŞERİDİ YOK EDELİM */
-    .submit-row {
-        background: #ffffff !important; /* Siyah yerine beyaz */
-        border: 1px solid var(--border-light) !important;
-        border-radius: 6px !important;
-        padding: 15px !important;
-        margin-top: 20px !important;
-    }
-
-    /* KAYDET BUTONLARI */
-    .submit-row input, .submit-row input.default {
-        background: var(--primary-green) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 4px !important;
-        padding: 10px 20px !important;
         font-weight: bold !important;
         text-transform: uppercase !important;
-        cursor: pointer !important;
+        padding: 12px 15px !important;
+        border: none !important;
     }
 
-    .submit-row input:hover { opacity: 0.9 !important; }
-
-    /* 6. SOLDAKİ NAVİGASYON (SİDEBAR) RENKLERİ */
-    #nav-sidebar {
-        background: #ffffff !important;
-        border-right: 1px solid var(--border-light) !important;
+    /* 4. FORM SATIRLARI (BEYAZ VE TEMİZ) */
+    .form-row {
+        background: var(--bg-clean) !important;
+        border-bottom: 1px solid #eee !important;
+        padding: 15px !important;
     }
-
-    #nav-sidebar .module th a { color: var(--primary-green) !important; }
     
-    /* 7. DARK MODE ZORLAMASINI TAMAMEN SİL */
+    /* Form içindeki metin alanlarını siyahlıktan kurtar */
+    textarea, input[type="text"], input[type="password"], select {
+        background-color: #fff !important;
+        color: #333 !important;
+        border: 1px solid #ccc !important;
+    }
+
+    /* 5. GÖRSELDEKİ O SİYAH ALT BARI (SUBMIT ROW) DÜZELTME */
+    .submit-row {
+        background: var(--bg-soft-grey) !important; /* Siyah yerine açık gri/beyaz */
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+        margin-top: 20px !important;
+        padding: 15px !important;
+    }
+
+    /* KAYDET / SİL BUTONLARI (TAMAMEN YEŞİL) */
+    .submit-row input, .submit-row input.default, .button, .default {
+        background: var(--breakfree-green) !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        font-weight: bold !important;
+        border-radius: 4px !important;
+        text-transform: uppercase !important;
+    }
+
+    .submit-row a.deletelink {
+        background: #ba2121 !important; /* Silme butonu kırmızı kalsın ama siyah olmasın */
+        color: white !important;
+        padding: 10px 20px !important;
+        border-radius: 4px !important;
+    }
+
+    /* 6. KARANLIK MODU ZORLA DEVRE DIŞI BIRAK (RENDERING FIX) */
     @media (prefers-color-scheme: dark) {
-        body, #content, .module, .form-row, .submit-row, #nav-sidebar { 
-            background-color: var(--bg-soft) !important; 
-            color: var(--text-main) !important; 
+        body, #content, .module, .form-row, .submit-row, #nav-sidebar, 
+        textarea, input, select { 
+            background-color: var(--bg-clean) !important; 
+            color: #333 !important; 
         }
-        .form-row, .submit-row { background: #ffffff !important; }
-        .module h2 { background: var(--primary-green) !important; color: white !important; }
+        #header, .module h2 { background: var(--breakfree-green) !important; color: white !important; }
+        .submit-row { background: var(--bg-soft-grey) !important; }
     }
 </style>
 
