@@ -2,29 +2,72 @@
 
 {% block extrastyle %}
 <style>
-    /* Django'nun renklerini zorla ezmek için !important kullanıyoruz */
-    #header, .module h2, .module caption, .inline-group h2 { 
-        background: #2c3e50 !important; 
-        color: #f1c40f !important; 
+    /* 1. TÜM RENK DEĞİŞKENLERİNİ EZELİM (Yeşil ve Beyaz Tonları) */
+    :root {
+        --primary: #198754 !important; /* Uygulamanın yeşili */
+        --secondary: #f8f9fa !important;
+        --header-bg: #198754 !important;
+        --header-color: #ffffff !important;
+        --breadcrumbs-bg: #e9ecef !important;
     }
-    div.breadcrumbs { background: #1a1a1a !important; }
-    body { background-color: #121212 !important; color: #e0e0e0 !important; }
-    .module { background: #1e1e1e !important; border: 1px solid #333 !important; }
-    
-    /* Bağlantı renkleri */
-    a:link, a:visited { color: #3498db !important; }
-    
-    /* Sol menü ve tablolar */
-    #nav-sidebar, .messagelist li { background: #1a1a1a !important; color: #eee !important; }
-    table thead th { background: #252525 !important; color: #3498db !important; }
-    tr.row1 { background: #161616 !important; }
-    tr.row2 { background: #1c1c1c !important; }
+
+    /* 2. ARKA PLANI BEYAZA ZORLAYALIM */
+    body, #content, .module, #content-main { 
+        background-color: #ffffff !important; 
+        color: #212529 !important; 
+    }
+
+    /* 3. ÜST BAR (YEŞİL) */
+    #header { 
+        background: #198754 !important; 
+        color: white !important; 
+        border-bottom: 3px solid #146c43 !important;
+    }
+
+    #header a:link, #header a:visited { color: white !important; }
+
+    /* 4. BAŞLIKLAR VE MODÜLLER (YEŞİL TONLARI) */
+    .module h2, .module caption, .inline-group h2 { 
+        background: #eaf5ea !important; 
+        color: #198754 !important; 
+        border-bottom: 1px solid #198754 !important;
+    }
+
+    div.breadcrumbs { 
+        background: #f8f9fa !important; 
+        color: #6c757d !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+
+    /* 5. TABLOLAR (TEMİZ BEYAZ/GRİ) */
+    table thead th { 
+        background: #f8f9fa !important; 
+        color: #198754 !important; 
+        border-bottom: 2px solid #198754 !important;
+    }
+
+    tr.row1 { background: #ffffff !important; }
+    tr.row2 { background: #fdfdfd !important; }
+
+    /* 6. BUTONLAR (YEŞİL) */
+    .button, input[type=submit], .submit-row input {
+        background: #198754 !important;
+        border: none !important;
+        color: white !important;
+        font-weight: bold !important;
+        border-radius: 20px !important; /* Uygulaman gibi yuvarlak hatlar */
+    }
+
+    /* 7. DJANGO DARK MODE DESTEĞİNİ ETKİSİZ HALE GETİRME */
+    @media (prefers-color-scheme: dark) {
+        body { background-color: white !important; color: black !important; }
+    }
 </style>
 {% endblock %}
 
 {% block branding %}
 <h1 id="site-name">
-    <a href="{% url 'admin:index' %}" style="color: #f1c40f !important;">
+    <a href="{% url 'admin:index' %}" style="color: white !important; font-weight: bold;">
         BreakFree Yönetim Paneli
     </a>
 </h1>
