@@ -169,7 +169,9 @@
         <div class="text-center py-5">
             <i class="bi bi-clipboard2-plus display-1 text-muted opacity-25"></i>
             <h4 class="mt-3 text-muted">Henüz aktif bir takibiniz bulunmuyor.</h4>
-            <a href="/tracking/create/" class="btn btn-primary rounded-pill px-5 mt-3">Yeni Hedef Başlat</a>        </div>
+            <!-- 🚨 DOĞRU ADRES: /tracking/yeni-hedef/ olarak güncellendi -->
+            <a href="/tracking/yeni-hedef/" class="btn btn-primary rounded-pill px-5 mt-3">Yeni Hedef Başlat</a>
+        </div>
     {% endif %}
 </div>
 
@@ -179,7 +181,6 @@
     document.addEventListener("DOMContentLoaded", function() {
         const chartElement = document.getElementById('cravingChart');
         if (chartElement) {
-            // Boş veri gelmesi durumunda JS'nin çökmesini engelleyen tırnak eklemeleri:
             const labels = {{ chart_labels|safe|default:"[]" }};
             const data = {{ chart_data|safe|default:"[]" }};
             
