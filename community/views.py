@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.db.models import Q 
 from django.core.paginator import Paginator 
 from .models import Post, Friendship, Notification, Report 
-from tracking.models import DependencyGoal, DailyLog 
+from tracking.models import DependencyGoal, DailyLog, UserBadge  # UserBadge eklendi
 from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
 import datetime
@@ -29,7 +29,7 @@ def community_home(request):
         return HttpResponse(html)
     return render(request, 'community/community_home.html', {'posts': posts, 'current_category': category_filter, 'query': query})
 
-# --- PROFİL SİSTEMİ (Onaylı Arkadaşlık, Tekil Liste & 10 Günlük Grafik) ---
+# --- PROFİL SİSTEMİ (Rozet Desteği Eklendi) ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
@@ -50,7 +50,7 @@ def user_profile(request, username):
         goal.status = status
         active_goals_with_stats.append(goal)
 
-    # Arkadaşlık Durumu Kontrolü (Görüntüleyen ve Profil Sahibi Arasında)
+    # Arkadaşlık Durumu Kontrolü
     sent_req = Friendship.objects.filter(from_user=request.user, to_user=profile_user).first()
     received_req = Friendship.objects.filter(from_user=profile_user, to_user=request.user).first()
     
@@ -60,7 +60,7 @@ def user_profile(request, username):
     elif received_req:
         status_label = "friends" if received_req.status == 'accepted' else "received"
 
-    # TEKİL LİSTELEME: Arkadaş listesinde mükerrer kaydı engeller
+    # Arkadaş Listesi
     friendships = Friendship.objects.filter(
         Q(from_user=profile_user, status='accepted') | 
         Q(to_user=profile_user, status='accepted')
@@ -75,14 +75,18 @@ def user_profile(request, username):
     
     friend_list = list(friends_set)
 
-    # GRAFİK VERİSİ: Son 10 Kaydı Çek ve Zaman Sırasına Koy
+    # --- ROZET VERİLERİ (DÜZELTME) ---
+    # Kullanıcının kazandığı rozetleri tarih sırasına göre çekiyoruz
+    user_badges = UserBadge.objects.filter(user=profile_user).select_related('badge').order_by('earned_at')
+
+    # GRAFİK VERİSİ
     ten_days_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:10]
     ten_days_logs = sorted(ten_days_logs, key=lambda x: x.date) 
     
     chart_labels = [log.date.strftime("%d %b") for log in ten_days_logs]
     chart_data = [log.craving_level for log in ten_days_logs]
 
-    # Sayfalamalı Yol Arkadaşı Haberleri (Sadece Kendi Profilinde)
+    # Haber Kaynağı
     friend_activities_list = []
     if request.user == profile_user:
         my_friends_ids = [u.id for u in friend_list]
@@ -101,6 +105,7 @@ def user_profile(request, username):
         'friend_list': friend_list,
         'friend_activities': friend_activities,
         'recent_logs': recent_logs,
+        'user_badges': user_badges,  # Context'e eklendi
         'chart_labels': json.dumps(chart_labels), 
         'chart_data': json.dumps(chart_data),     
     })
@@ -127,7 +132,6 @@ def send_friend_request(request, user_id):
 def accept_friend_request(request, notification_id):
     notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
     sender = notification.sender
-    # Tek satır üzerinden onaylama
     friendship = Friendship.objects.filter(from_user=sender, to_user=request.user, status='pending').first()
     if friendship:
         friendship.status = 'accepted'
@@ -177,7 +181,7 @@ def user_list(request):
         users = users_queryset
     return render(request, 'community/user_list.html', {'users': users, 'search_query': search_query})
 
-# --- STANDART İŞLEMLER (POST, DETAIL, SUPPORT, REPORT, EDIT) ---
+# --- STANDART İŞLEMLER ---
 @login_required
 def create_post(request):
     if request.method == 'POST':
@@ -195,7 +199,7 @@ def create_post(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all().order_by('-created_at')
-    is_supported = post.supports.filter(request.user).exists() if hasattr(post, 'supports') else False
+    is_supported = post.supports.filter(user=request.user).exists() if hasattr(post, 'supports') else False
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
         if comment_form.is_valid():

@@ -48,22 +48,23 @@ DEPENDENCY_SURVEYS = {
     ]
 }
 
-# --- ROZET KONTROL VE GEÇMİŞ TARİH HESAPLAMA ---
+# --- ROZET KONTROL FONKSİYONU (DÜZELTİLDİ - TARİH HESAPLAMA EKLENDİ) ---
 def check_and_assign_badges(user, goal, streak):
-    # Veritabanı modelindeki 'days_required' alanına göre kazanılan rozetleri çek
+    # 'days_required' alanına göre kazanması gereken rozetleri bul
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
         # Rozet yoksa oluştur, varsa çek
         user_badge, created = UserBadge.objects.get_or_create(user=user, badge=badge)
         
-        # Eğer rozet yeni oluşturulduysa veya tarih yanlışsa, gerçek tarihi hesapla
-        # Gerçek Tarih = Hedefin Başlangıç Günü + Rozet İçin Gereken Gün Sayısı
+        # --- KRİTİK DÜZELTME BURASI ---
+        # Rozet kazanma tarihini manuel hesaplıyoruz: Hedef Başlangıcı + Gereken Gün
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
         
-        # Gelecek bir tarih atanmasın diye kontrol et
+        # Eğer hesaplanan tarih bugünden ilerideyse bugünü ver (Hata payı)
         if calculated_date > datetime.date.today():
             calculated_date = datetime.date.today()
         
+        # Hesaplanan tarihi kaydediyoruz
         user_badge.earned_at = calculated_date
         user_badge.save()
 
@@ -104,7 +105,7 @@ def dashboard(request):
     else:
         current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
     
-    # Veri girişi (POST) durumunda rozetleri kontrol et
+    # Veri girişi veya Sayfa Yüklemesinde rozetleri kontrol et
     if request.method == 'POST':
         log_form = DailyLogForm(request.POST, user=request.user)
         if log_form.is_valid():
@@ -113,17 +114,17 @@ def dashboard(request):
             check_and_assign_badges(request.user, goal, current_streak)
             return redirect(f'/tracking/dashboard/?goal_id={log.goal.id}&month={current_month}')
     else:
-        # Sayfa her açıldığında rozetleri tekrar kontrol et (Gerekliyse tarihleri günceller)
         check_and_assign_badges(request.user, goal, current_streak)
         log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
 
-    # Context verileri
+    # Verileri hazırla
     user_badges = UserBadge.objects.filter(user=request.user).select_related('badge').order_by('earned_at')
     current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
     monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
     days_in_month = (end_of_month - start_of_month).days
     success_rate = int((monthly_clean_count / days_in_month) * 100) if days_in_month > 0 else 0
 
+    # Analiz metinleri
     analysis_options = {
         "level_1": ["Vücudun dopamin dengesini yeniden kurmaya başladı!", "Beynindeki Prefrontal Korteks direksiyonun başında!"],
         "level_2": ["İraden bir kas gibi güçleniyor!", "Beyninde nöroplastisite gerçekleşiyor!"],
@@ -165,7 +166,7 @@ def dashboard(request):
     }
     return render(request, 'tracking/dashboard.html', context)
 
-# 3. Diğer Fonksiyonlar (Aynı Bırakıldı)
+# SOS ve Survey kısımları (Aynı kaldı)
 @login_required(login_url='/accounts/login/')
 def send_crisis_notification(request):
     if request.method == 'POST':
