@@ -21,6 +21,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+    'tracking.apps.TrackingConfig',  # EN BAŞA ALDIK
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -29,7 +30,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'accounts',
-    'tracking.apps.TrackingConfig',  # Admin özelleştirmeleri için tam yol
     'community',
     'core',
 ]
