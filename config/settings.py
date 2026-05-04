@@ -128,7 +128,13 @@ LOGIN_REDIRECT_URL = '/tracking/'
 LOGIN_URL = '/accounts/login/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
+# settings.py dosyasının EN ALTINA ekle
+ALLOWED_HOSTS = ['breakfree-0apn.onrender.com', '127.0.0.1', 'localhost']
+
+# Render (HTTPS) üzerinden gelen formların kabul edilmesi için zorunlu ayarlar
 CSRF_TRUSTED_ORIGINS = ['https://breakfree-0apn.onrender.com']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Giriş bilgilerinin tarayıcıda güvenli tutulması için
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
