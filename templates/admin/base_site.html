@@ -2,11 +2,13 @@
 
 {% block extrastyle %}
 <style>
-    /* 1. RENK AYARLARI */
+    /* 1. ANA RENK VE DEĞİŞKENLER */
     :root {
-        --breakfree-green: #468c46 !important; /* Logondaki ana yeşil */
+        --breakfree-green: #468c46 !important;
+        --dark-green-text: #2d5a27 !important;
         --bg-white: #ffffff !important;
-        --soft-green: #f0f7f0 !important;   /* Satır ve başlık arka planı */
+        --soft-green: #f0f7f0 !important;
+        --border-color: #d1d1d1 !important; /* Çizgiler için daha belirgin gri */
     }
 
     body, #content, #content-main { 
@@ -14,59 +16,69 @@
         color: #333 !important; 
     }
 
-    /* 2. ÜST BAR */
+    /* 2. ÜST BİLGİ ÇUBUĞU */
     #header { 
         background: var(--breakfree-green) !important; 
         padding: 12px 40px !important;
     }
 
     /* 3. GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
-    /* Beyaz üzerine açık yeşil şerit ve koyu yeşil yazı ile kontrastı düzelttik */
     .module h2, .module caption, .inline-group h2 { 
         background: var(--soft-green) !important; 
-        color: var(--breakfree-green) !important; 
-        font-weight: bold !important;
+        color: var(--dark-green-text) !important; 
+        font-weight: 800 !important;
         border-bottom: 2px solid var(--breakfree-green) !important;
         text-transform: uppercase !important;
-        padding: 10px !important;
+        padding: 10px 15px !important;
     }
 
-    /* 4. TABLO SATIRLARI */
-    /* Siyahlıkları tamamen sildik, tertemiz beyaz/gri yaptık */
+    /* 4. TABLO SATIRLARI VE BELİRGİN ÇİZGİLER */
     .module table tbody tr, .module table tbody td, .module table tbody th {
         background-color: var(--bg-white) !important;
         color: #444 !important;
-        border-bottom: 1px solid #eee !important;
+        /* Çizgileri burada daha belirgin hale getirdik */
+        border-bottom: 1px solid var(--border-color) !important; 
     }
 
-    .module table tbody tr:hover {
-        background-color: #f9fdf9 !important; /* Hafif bir hover efekti */
+    /* Tablo başlık çizgileri */
+    .module table thead th {
+        border-bottom: 2px solid var(--breakfree-green) !important;
+        background: var(--soft-green) !important;
+        color: var(--dark-green-text) !important;
     }
 
-    /* Model İsimleri (Comments, Posts vs.) */
-    .module table th a {
-        color: var(--breakfree-green) !important;
-        font-weight: 600 !important;
+    /* 5. GÖRSELDEKİ O SİYAH KUTUYU YOK ETME */
+    /* Sayfalama (pagination) veya footer alanındaki siyahlıkları hedefler */
+    .paginator, .submit-row, #footer, .history-results {
+        background: var(--bg-white) !important;
+        color: #333 !important;
+        border-top: 1px solid var(--border-color) !important;
     }
 
-    /* 5. BUTONLAR (EKLE / DEĞİŞTİR) */
+    /* Eğer o siyahlık bir 'div' ise onu tamamen şeffaf yap veya gizle */
+    div[style*="background-color: rgb(33, 37, 41)"], 
+    div[style*="background: rgb(33, 37, 41)"],
+    .dark-mode-only {
+        display: none !important;
+    }
+
+    /* 6. BUTONLAR */
     .addlink, .changelink {
         background-color: var(--breakfree-green) !important;
         color: white !important;
         border-radius: 6px !important;
-        padding: 5px 12px !important;
         font-weight: bold !important;
-        text-decoration: none !important;
     }
 
-    /* 6. KARANLIK MODU ZORLA DEVRE DIŞI BIRAK */
+    /* 7. DARK MODE ZORLAMASINI TAMAMEN SİL */
     @media (prefers-color-scheme: dark) {
         body, #content, .module, tr.row1, tr.row2, 
-        .module table tbody tr, .module table tbody td { 
+        .module table tbody tr, .module table tbody td,
+        .paginator, .submit-row { 
             background-color: var(--bg-white) !important; 
             color: #333 !important; 
         }
-        .module h2 { background: var(--soft-green) !important; color: var(--breakfree-green) !important; }
+        .module h2 { background: var(--soft-green) !important; color: var(--dark-green-text) !important; }
         #header { background: var(--breakfree-green) !important; }
     }
 </style>
