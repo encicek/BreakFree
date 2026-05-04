@@ -127,3 +127,5 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 LOGIN_REDIRECT_URL = '/tracking/'
 LOGIN_URL = '/accounts/login/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+CSRF_TRUSTED_ORIGINS = ['https://breakfree-0apn.onrender.com']
