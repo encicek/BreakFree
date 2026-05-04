@@ -50,21 +50,17 @@ DEPENDENCY_SURVEYS = {
 
 # --- ROZET KONTROL FONKSİYONU (DÜZELTİLDİ - TARİH HESAPLAMA EKLENDİ) ---
 def check_and_assign_badges(user, goal, streak):
-    # 'days_required' alanına göre kazanması gereken rozetleri bul
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
-        # Rozet yoksa oluştur, varsa çek
+        # get_or_create yerine güncelleme odaklı gidelim
         user_badge, created = UserBadge.objects.get_or_create(user=user, badge=badge)
         
-        # --- KRİTİK DÜZELTME BURASI ---
-        # Rozet kazanma tarihini manuel hesaplıyoruz: Hedef Başlangıcı + Gereken Gün
+        # Tarihi her zaman hesapla ve üzerine yaz (Garanti yöntem)
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
         
-        # Eğer hesaplanan tarih bugünden ilerideyse bugünü ver (Hata payı)
         if calculated_date > datetime.date.today():
             calculated_date = datetime.date.today()
         
-        # Hesaplanan tarihi kaydediyoruz
         user_badge.earned_at = calculated_date
         user_badge.save()
 
