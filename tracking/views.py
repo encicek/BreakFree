@@ -48,24 +48,14 @@ DEPENDENCY_SURVEYS = {
     ]
 }
 
-# --- ROZET KONTROL FONKSİYONU (KESİN ÇÖZÜM - TARİHİ ZORLA GÜNCELLEME) ---
+# --- ROZET KONTROL FONKSİYONU ---
 def check_and_assign_badges(user, goal, streak):
-    # 'days_required' alanına göre kazanılan rozetleri çek
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
-        # Rozet kaydını bul veya yarat
         user_badge, created = UserBadge.objects.get_or_create(user=user, badge=badge)
-        
-        # --- ZAMAN MAKİNESİ MANTIĞI ---
-        # Gerçek Tarih = Hedef Başlangıcı + Rozet Gün Sayısı
-        # Örn: 1 Nisan + 7 gün = 8 Nisan. 4 Mayıs değil!
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
-        
-        # Gelecek bir tarih atanmasın diye kontrol
         if calculated_date > datetime.date.today():
             calculated_date = datetime.date.today()
-        
-        # Tarihi üzerine yaz ve kaydet
         user_badge.earned_at = calculated_date
         user_badge.save()
 
@@ -99,14 +89,12 @@ def dashboard(request):
     else:
         end_of_month = datetime.date(current_year, current_month + 1, 1)
     
-    # Mevcut Seri Hesaplama
     last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
     if last_relapse:
         current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
     else:
         current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
     
-    # Her durumda rozetleri kontrol et ve tarihleri güncelle
     if request.method == 'POST':
         log_form = DailyLogForm(request.POST, user=request.user)
         if log_form.is_valid():
@@ -118,7 +106,6 @@ def dashboard(request):
         check_and_assign_badges(request.user, goal, current_streak)
         log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
 
-    # Verileri hazırla
     user_badges = UserBadge.objects.filter(user=request.user).select_related('badge').order_by('earned_at')
     current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
     monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
@@ -166,7 +153,7 @@ def dashboard(request):
     }
     return render(request, 'tracking/dashboard.html', context)
 
-# SOS ve Survey kısımları (Değişmedi)
+# 3. SOS, Survey ve Create Goal (Aynı kaldı)
 @login_required(login_url='/accounts/login/')
 def send_crisis_notification(request):
     if request.method == 'POST':
@@ -225,4 +212,4 @@ def create_goal(request):
         return redirect('tracking:dashboard')
     else:
         form = GoalForm(initial={'dependency_type': chosen_type})
-    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal, 'type': chosen_type})s
+    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal, 'type': chosen_type})
