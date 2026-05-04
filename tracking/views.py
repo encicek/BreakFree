@@ -52,14 +52,11 @@ DEPENDENCY_SURVEYS = {
 def check_and_assign_badges(user, goal, streak):
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
-        # Gerçek kazandığın tarihi hesapla (Hedef Başlangıcı + Gereken Gün)
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
         
         if calculated_date > datetime.date.today():
             calculated_date = datetime.date.today()
 
-        # UPDATE_OR_CREATE kullanarak veritabanını zorluyoruz
-        # 'defaults' içindeki earned_at alanını her durumda üzerine yazdırıyoruz
         UserBadge.objects.update_or_create(
             user=user, 
             badge=badge,
@@ -81,11 +78,13 @@ def dashboard(request):
     else:
         goal = all_active_goals.order_by('-id').first()
     
+    # Yeni hedef modu kontrolü
     if not goal or request.GET.get('new_goal') == 'true':
         return render(request, 'tracking/dashboard.html', {
             'goal': None, 
             'all_active_goals': all_active_goals,
-            'new_goal_mode': True
+            'new_goal_mode': True,
+            'dependency_choices': DEPENDENCY_SURVEYS.keys() # Anket seçeneklerini buraya da ekledik
         })
 
     today = datetime.date.today()
@@ -157,10 +156,11 @@ def dashboard(request):
         'avg_craving': round(avg_craving, 1), 'bio_status': bio_status, 'user_badges': user_badges,
         'has_entry_today': has_entry_today, 'prev_month': 12 if current_month == 1 else current_month - 1,
         'next_month': 1 if current_month == 12 else current_month + 1,
+        'dependency_choices': DEPENDENCY_SURVEYS.keys() # Butonların görünmesi için gerekli anahtarlar
     }
     return render(request, 'tracking/dashboard.html', context)
 
-# 3. SOS, Survey ve Create Goal (Aynı kaldı)
+# 3. SOS, Survey ve Create Goal
 @login_required(login_url='/accounts/login/')
 def send_crisis_notification(request):
     if request.method == 'POST':
