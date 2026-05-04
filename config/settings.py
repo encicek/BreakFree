@@ -116,8 +116,4 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# --- ADMIN PANELİ ÖZELLEŞTİRME ---
-from django.contrib import admin
-admin.site.site_header = "BreakFree Yönetim Paneli"
-admin.site.site_title = "BreakFree Admin"
-admin.site.index_title = "Sistem Yönetimine Hoş Geldiniz"
+
