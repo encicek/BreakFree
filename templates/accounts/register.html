@@ -1,19 +1,70 @@
-{% extends 'base.html' %}
-
+{% extends "base.html" %}
 {% block content %}
-<div class="container mt-4" style="max-width: 500px;">
-    <h2>Register</h2>
+<style>
+    /* Input kutularını ve form yazılarını düzenlemek için minik bir stil */
+    .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 10px;
+    }
+    .form-text ul {
+        list-style: none;
+        padding-left: 0;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .form-text li::before {
+        content: "• ";
+        color: #198754;
+    }
+</style>
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh; margin-top: 50px;">
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden" style="max-width: 900px; width: 100%;">
+        <div class="row g-0">
+            <!-- Sol Yeşil Panel -->
+            <div class="col-md-5 d-none d-md-flex bg-success text-white p-5 flex-column justify-content-center">
+                <h2 class="fw-bold mb-4">Yeni Bir Başlangıç!</h2>
+                <p class="mb-4">BreakFree ile bağımlılıklarından kurtulup özgürlüğüne kavuşan binlerce kişiye katıl.</p>
+                <div class="mt-2">
+                    <p class="mb-2"><i class="fas fa-check me-2"></i> SOS Kriz Bildirimi</p>
+                    <p class="mb-2"><i class="fas fa-check me-2"></i> Günlük Başarı Takibi</p>
+                    <p class="mb-2"><i class="fas fa-check me-2"></i> Topluluk Desteği</p>
+                </div>
+            </div>
 
-        <button type="submit" class="btn btn-primary">Hesap Oluştur</button>
-    </form>
+            <!-- Sağ Form Paneli -->
+            <div class="col-md-7 p-5 bg-white text-dark">
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold text-success">Kayıt Ol</h3>
+                    <p class="text-muted small">Hemen hesabını oluştur ve yolculuğa baş.</p>
+                </div>
 
-    <p class="mt-3">
-        Zaten bir hesabınız var mı?
-        <a href="{% url 'login' %}">Giriş Yapın</a>
-    </p>
+                <form method="POST">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase mb-1" style="color: #444;">{{ field.label }}</label>
+                        <!-- Field'a class eklemek için: -->
+                        <div class="input-group">
+                            {{ field }}
+                        </div>
+                        {% if field.help_text %}
+                        <div class="form-text mt-1">{{ field.help_text|safe }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold mt-4 shadow-sm" style="border-radius: 8px;">
+                        Hesap Oluştur
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <p class="small text-muted">Zaten bir hesabın var mı? <a href="{% url 'login' %}" class="text-success text-decoration-none fw-bold">Giriş Yap</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
