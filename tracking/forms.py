@@ -7,6 +7,19 @@ class GoalForm(forms.ModelForm):
         # initial_score yerine bio alanı eklendi.
         fields = ['dependency_type', 'target_note', 'bio'] 
         
+        # Etiketleri Türkçeleştiriyoruz
+        labels = {
+            'dependency_type': 'Bağımlılık Türü',
+            'target_note': 'Motivasyon Notu',
+            'bio': 'Hakkında (Bio)',
+        }
+        
+        # Alttaki açıklama metinlerini (help_text) tamamen kaldırıyoruz
+        help_texts = {
+            'target_note': None,
+            'bio': None,
+        }
+        
         widgets = {
             'dependency_type': forms.Select(attrs={'class': 'form-select rounded-pill'}),
             'target_note': forms.Textarea(attrs={'class': 'form-control rounded-4', 'rows': 3, 'placeholder': 'Seni ne motive eder?'}),
@@ -18,6 +31,16 @@ class DailyLogForm(forms.ModelForm):
         model = DailyLog
         # 'goal' alanı kayıt türünü seçmek için en başa eklendi.
         fields = ['goal', 'date', 'craving_level', 'relapse', 'trigger', 'daily_note']
+        
+        # Kayıt formu için de etiketleri Türkçeleştirelim
+        labels = {
+            'goal': 'Kayıt Girilecek Mücadele',
+            'date': 'Tarih',
+            'craving_level': 'Zorlanma Seviyesi (1-10)',
+            'relapse': 'Bozdum (Relapse)',
+            'trigger': 'Tetikleyici',
+            'daily_note': 'Günlük Not',
+        }
         
         widgets = {
             'goal': forms.Select(attrs={'class': 'form-select rounded-pill shadow-sm'}),
@@ -35,7 +58,5 @@ class DailyLogForm(forms.ModelForm):
         
         if user:
             # SADECE mevcut kullanıcıya ait aktif hedefler listelenir.
-            # Bu sayede Seda veya Kerem gibi diğer kullanıcıların hedefleri görünmez.
             self.fields['goal'].queryset = DependencyGoal.objects.filter(user=user, is_active=True)
             self.fields['goal'].empty_label = "Mücadele Seçin"
-            self.fields['goal'].label = "Kayıt Girilecek Mücadele"
