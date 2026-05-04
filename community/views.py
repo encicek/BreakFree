@@ -19,7 +19,7 @@ def create_post(request):
     if request.method == 'POST':
         content = request.POST.get('content')
         if content:
-            # DÜZELTME: author yerine user kullanıldı
+            # Modelindeki 'user' alanına göre kayıt yapıyoruz
             Post.objects.create(user=request.user, content=content)
             return redirect('community:community_home')
     return render(request, 'community/create_post.html')
@@ -35,10 +35,11 @@ def support_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     return redirect('community:post_detail', post_id=post_id)
 
-# 4. KULLANICI LİSTESİ VE ARKADAŞLIK
+# 4. KULLANICI LİSTESİ VE ARKADAŞLIK (ADMİN GİZLENDİ)
 @login_required
 def user_list(request):
-    users = User.objects.exclude(id=request.user.id)
+    # Hem kendini hem de 'admin' isimli kullanıcıyı/süper kullanıcıları hariç tutuyoruz
+    users = User.objects.exclude(id=request.user.id).exclude(is_superuser=True).exclude(username='admin')
     return render(request, 'community/user_list.html', {'users': users})
 
 @login_required
@@ -64,20 +65,20 @@ def reject_friend_request(request, notification_id):
     notification.delete()
     return redirect('community:notifications')
 
-# 5. PROFİL GÖRÜNTÜLEME (KRİTİK DÜZELTME BÖLGESİ)
+# 5. PROFİL GÖRÜNTÜLEME (KRİTİK GÜNCELLEME)
 @login_required
 def user_profile(request, username):
     user = get_object_or_404(User, username=username)
     
-    # Rozetleri çekiyoruz
+    # Takip panelindeki gerçek rozetleri çekiyoruz
     user_badges = UserBadge.objects.filter(user=user).select_related('badge').order_by('-earned_at')
     
-    # DÜZELTME: author yerine user kullanıldı (image_390408.png hatası burada çözüldü)
+    # Senin modelindeki 'user' alanına göre filtreliyoruz
     user_posts = Post.objects.filter(user=user).order_by('-created_at')
     
     active_goals = DependencyGoal.objects.filter(user=user, is_active=True)
     
-    # Grafik ve Log verileri (Boş kalırsa profil hata verir)
+    # Grafik ve Log verileri (Profilin hatasız açılması için şart)
     main_goal = active_goals.first()
     recent_logs = []
     chart_labels = []
@@ -89,7 +90,7 @@ def user_profile(request, username):
         chart_labels = [log.date.strftime('%d %b') for log in chart_logs]
         chart_data = [log.craving_level for log in chart_logs]
 
-    # Arkadaşlık durumu ve listesi (Eski kodlarını koruyoruz)
+    # Arkadaşlık durumu ve listesi
     status_label = 'none'
     friendship = Friendship.objects.filter(
         (Q(from_user=request.user) & Q(to_user=user)) | 
