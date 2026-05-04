@@ -104,19 +104,20 @@
                     </div>
                 </div>
 
-                <!-- Başarı Rozetleri -->
+                <!-- --- DİNAMİK ROZET GÜNCELLEMESİ --- -->
                 <div class="card shadow-sm border-0 mb-4 bg-white">
                     <div class="card-body p-3">
                         <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">Başarı Rozetleri</h6>
                         <div class="d-flex flex-wrap gap-3 justify-content-center py-2">
-                            <div class="text-center">
-                                <div class="fs-1">🏆</div>
-                                <div class="fw-bold small" style="font-size: 0.7rem;">Kararlı</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="fs-1">⚡</div>
-                                <div class="fw-bold small" style="font-size: 0.7rem;">Hızlı Başlangıç</div>
-                            </div>
+                            {% for ub in user_badges %}
+                                <div class="text-center" style="width: 80px;">
+                                    <img src="{{ ub.badge.image.url }}" alt="{{ ub.badge.name }}" style="width: 45px; height: 45px; object-fit: contain;">
+                                    <div class="fw-bold mt-1" style="font-size: 0.7rem;">{{ ub.badge.name }}</div>
+                                    <small class="text-muted d-block" style="font-size: 0.6rem;">{{ ub.earned_at|date:"d M" }}</small>
+                                </div>
+                            {% empty %}
+                                <p class="small text-muted fst-italic text-center mb-0">Henüz rozet kazanılmadı.</p>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
