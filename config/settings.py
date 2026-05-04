@@ -128,13 +128,14 @@ LOGIN_REDIRECT_URL = '/tracking/'
 LOGIN_URL = '/accounts/login/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# settings.py dosyasının EN ALTINA ekle
-ALLOWED_HOSTS = ['breakfree-0apn.onrender.com', '127.0.0.1', 'localhost']
-
-# Render (HTTPS) üzerinden gelen formların kabul edilmesi için zorunlu ayarlar
+# settings.py dosyasının EN ALTINA yapıştır
+ALLOWED_HOSTS = ['breakfree-0apn.onrender.com', '127.0.0.1']
 CSRF_TRUSTED_ORIGINS = ['https://breakfree-0apn.onrender.com']
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Giriş bilgilerinin tarayıcıda güvenli tutulması için
+# Render/HTTPS uyumu için hayati önemde
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Giriş yaptıktan sonra seni Dashboard'a fırlatması için
+LOGIN_REDIRECT_URL = '/tracking/dashboard/'

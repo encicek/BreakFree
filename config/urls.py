@@ -25,15 +25,9 @@ admin.site.site_title = "BreakFree Admin"
 admin.site.index_title = "Sistem Yönetimine Hoş Geldiniz"
 
 urlpatterns = [
-    # 1. Ana sayfayı doğrudan giriş sayfasına yönlendirir
-    path('', RedirectView.as_view(url='login/', permanent=True)), 
-
-    # 2. Login Sayfası (Kendi tanımladığın login yolu)
-    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html', next_page='/tracking/'), name='login'),
-    
-    # 3. Diğer Uygulama Yolları
+    path('', RedirectView.as_view(url='/login/', permanent=True)), # Ana sayfayı login'e at
     path('admin/', admin.site.urls),
+    path('login/', include('django.contrib.auth.urls')), # Django'nun hazır login sistemini kullanabiliriz
     path('tracking/', include('tracking.urls')),
-    path('community/', include(('community.urls', 'community'), namespace='community')),
-    path('accounts/', include('accounts.urls')),
+    path('accounts/', include('accounts.urls')), 
 ]
