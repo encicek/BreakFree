@@ -2,29 +2,26 @@
 
 {% block extrastyle %}
 <style>
-    /* --- BREAKFREE UNIFIED DESIGN SYSTEM --- */
+    /* --- BREAKFREE UNIFIED GREEN & WHITE DESIGN --- */
     :root {
-        --breakfree-green: #468c46 !important; 
-        --bg-main: #f8f9fa !important;         
-        --bg-card: #ffffff !important;         
+        --breakfree-green: #468c46 !important; /* Giriş sayfasındaki ana yeşil */
+        --bg-main: #f8f9fa !important;         /* Beyazı kıran hafif gri arka plan */
+        --bg-card: #ffffff !important;         /* Kartların içi saf beyaz */
         --text-dark: #333333 !important;
         --border-light: #d1d1d1 !important;
     }
 
-    /* 1. TÜM SİYAHLIKLARI VE GÖLGELERİ SIFIRLA */
+    /* 1. TÜM SİYAHLIKLARI YOK ET VE ARKA PLANI EŞİTLE */
     body, #content, .module, #content-main, .change-form, 
-    .submit-row, .paginator, #footer, #nav-sidebar { 
+    .submit-row, .paginator, #nav-sidebar { 
         background-color: var(--bg-main) !important; 
         color: var(--text-dark) !important; 
-        box-shadow: none !important; /* Tüm gölgeleri sildik */
-        border-color: var(--border-light) !important;
+        box-shadow: none !important;
     }
 
-    /* GÖRSELDEKİ O SİYAH ŞERİDİ KESİN OLARAK SİLME */
-    #footer, .footer, #content-related::after, .module::after {
+    /* GÖRSELDEKİ SİYAH FOOTER ALANINI TAMAMEN GİZLE */
+    #footer, .footer {
         display: none !important;
-        background: none !important;
-        box-shadow: none !important;
     }
 
     /* 2. ÜST BAR (HEADER) */
@@ -34,7 +31,7 @@
         padding: 15px 40px !important;
     }
 
-    /* 3. GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
+    /* 3. GRUP BAŞLIKLARI (SON EYLEMLERLE AYNI TASARIM) */
     .module h2, .module caption, .inline-group h2, #content-related h2 { 
         background: var(--breakfree-green) !important; 
         color: #ffffff !important; 
@@ -45,7 +42,7 @@
         border-radius: 4px 4px 0 0 !important;
     }
 
-    /* 4. KART YAPISI VE TABLOLAR */
+    /* 4. KART YAPISI (GİRİŞ SAYFASINDAKİ GİBİ BEYAZ KUTULAR) */
     .module, .form-row, .submit-row {
         background: var(--bg-card) !important;
         border: 1px solid var(--border-light) !important;
@@ -53,19 +50,11 @@
         margin-bottom: 20px !important;
     }
 
-    .module table tbody tr {
-        background-color: var(--bg-card) !important;
-        border-bottom: 1px solid #eeeeee !important;
-    }
+    .form-row { padding: 15px !important; margin-bottom: 0 !important; border-radius: 0 !important; }
 
-    .module table th a {
-        color: var(--breakfree-green) !important;
-        font-weight: 600 !important;
-    }
-
-    /* 5. EKLE/DEĞİŞTİR SAYFALARINDAKİ ALT BAR */
+    /* 5. EKLE VE DEĞİŞTİR SAYFALARINDAKİ SİYAH BUTON BARI DÜZELTME */
     .submit-row {
-        background: var(--bg-card) !important;
+        background: var(--bg-card) !important; /* Siyahlığı beyaza çevirdik */
         padding: 15px !important;
         display: flex !important;
         gap: 10px !important;
@@ -73,25 +62,42 @@
         border-radius: 6px !important;
     }
 
+    /* KAYDET / DEĞİŞTİR BUTONLARI */
     .submit-row input, .submit-row input.default, .button, .default {
         background: var(--breakfree-green) !important;
         color: white !important;
         border: none !important;
         padding: 10px 20px !important;
+        font-weight: bold !important;
         border-radius: 4px !important;
         text-transform: uppercase !important;
-        font-weight: bold !important;
+        cursor: pointer !important;
     }
 
-    /* 6. DARK MODE TAMAMEN ETKİSİZ (GİRİŞ EKRANI RENGİ SABİT) */
+    /* 6. TABLO VE SATIR RENKLERİ */
+    .module table tbody tr {
+        background-color: var(--bg-card) !important;
+        border-bottom: 1px solid #eeeeee !important;
+    }
+
+    .module table tbody tr:hover {
+        background-color: #f1f8f1 !important;
+    }
+
+    .module table th a {
+        color: var(--breakfree-green) !important;
+        font-weight: 600 !important;
+    }
+
+    /* 7. DARK MODE ZORLAMASINI TAMAMEN SİL */
     @media (prefers-color-scheme: dark) {
-        body, #content, .module, .form-row, .submit-row, #nav-sidebar { 
+        body, #content, .module, .form-row, .submit-row, #nav-sidebar, 
+        textarea, input, select { 
             background-color: var(--bg-main) !important; 
             color: var(--text-dark) !important; 
         }
-        .module, .submit-row { background: var(--bg-card) !important; }
+        .module, .form-row, .submit-row { background: var(--bg-card) !important; }
         #header, .module h2 { background: var(--breakfree-green) !important; color: white !important; }
-        #footer, .footer { display: none !important; }
     }
 </style>
 
