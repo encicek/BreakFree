@@ -2,54 +2,29 @@
 
 {% block extrastyle %}
 <style>
-    /* Admin Paneli Arka Plan ve Ana Renkler */
-    :root {
-        --primary: #2c3e50;
-        --accent: #3498db;
-        --dark-bg: #121212;
-        --card-bg: #1e1e1e;
+    /* Django'nun renklerini zorla ezmek için !important kullanıyoruz */
+    #header, .module h2, .module caption, .inline-group h2 { 
+        background: #2c3e50 !important; 
+        color: #f1c40f !important; 
     }
-
-    body { background-color: var(--dark-bg) !important; color: #e0e0e0 !important; }
+    div.breadcrumbs { background: #1a1a1a !important; }
+    body { background-color: #121212 !important; color: #e0e0e0 !important; }
+    .module { background: #1e1e1e !important; border: 1px solid #333 !important; }
     
-    #header { background: var(--primary) !important; border-bottom: 2px solid var(--accent); }
+    /* Bağlantı renkleri */
+    a:link, a:visited { color: #3498db !important; }
     
-    .module h2, .module caption, .inline-group h2 {
-        background: #34495e !important;
-        color: #fff !important;
-    }
-
-    div.breadcrumbs { background: #1a1a1a !important; color: #bbb !important; }
-
-    #content-main { background: var(--dark-bg) !important; }
-
-    .module { background: var(--card-bg) !important; border: 1px solid #333 !important; }
-
-    /* Tablo ve Liste Renkleri */
-    table thead th { background: #252525 !important; color: var(--accent) !important; }
-    
-    tr.row1 { background: #1a1a1a !important; }
-    tr.row2 { background: #1e1e1e !important; }
-    
-    /* Butonlar */
-    .button, input[type=submit], input[type=button], .submit-row input {
-        background: #27ae60 !important; /* Görseldeki yeşil butonlar için */
-        border-radius: 4px !important;
-        font-weight: bold !important;
-    }
-
-    /* Sağ taraftaki 'Son Eylemler' Kartı */
-    #content-related {
-        background: var(--card-bg) !important;
-        border-left: 1px solid #333 !important;
-        color: #ccc !important;
-    }
+    /* Sol menü ve tablolar */
+    #nav-sidebar, .messagelist li { background: #1a1a1a !important; color: #eee !important; }
+    table thead th { background: #252525 !important; color: #3498db !important; }
+    tr.row1 { background: #161616 !important; }
+    tr.row2 { background: #1c1c1c !important; }
 </style>
 {% endblock %}
 
 {% block branding %}
 <h1 id="site-name">
-    <a href="{% url 'admin:index' %}" style="color: #f1c40f; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <a href="{% url 'admin:index' %}" style="color: #f1c40f !important;">
         BreakFree Yönetim Paneli
     </a>
 </h1>
