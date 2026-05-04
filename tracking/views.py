@@ -52,12 +52,19 @@ DEPENDENCY_SURVEYS = {
 def check_and_assign_badges(user, goal, streak):
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
-        user_badge, created = UserBadge.objects.get_or_create(user=user, badge=badge)
+        # Gerçek kazandığın tarihi hesapla (Hedef Başlangıcı + Gereken Gün)
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
+        
         if calculated_date > datetime.date.today():
             calculated_date = datetime.date.today()
-        user_badge.earned_at = calculated_date
-        user_badge.save()
+
+        # UPDATE_OR_CREATE kullanarak veritabanını zorluyoruz
+        # 'defaults' içindeki earned_at alanını her durumda üzerine yazdırıyoruz
+        UserBadge.objects.update_or_create(
+            user=user, 
+            badge=badge,
+            defaults={'earned_at': calculated_date}
+        )
 
 # 2. DASHBOARD
 @login_required(login_url='/accounts/login/')
