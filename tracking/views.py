@@ -1,13 +1,24 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
+from django.contrib.auth.models import User
 from .models import DependencyGoal, DailyLog, Badge, UserBadge
 from community.models import Friendship, Notification 
 from .forms import GoalForm, DailyLogForm
 import datetime
 import json
 import random
+
+# --- GEÇİCİ ADMİN OLUŞTURMA FONKSİYONU ---
+# Bu fonksiyon Render terminaline girmeden admin hesabı yaratmanı sağlar.
+def create_admin_account(request):
+    # Kullanıcı adı: admin, Şifre: sifre12345
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser('admin', 'admin@example.com', 'sifre12345')
+        return HttpResponse("Admin hesabı başarıyla oluşturuldu! Kullanıcı: admin, Şifre: sifre12345")
+    else:
+        return HttpResponse("Admin hesabı zaten mevcut.")
 
 # 1. ANKET SORULARI
 DEPENDENCY_SURVEYS = {
@@ -55,9 +66,7 @@ def dashboard(request):
     else:
         goal = all_active_goals.order_by('-id').first()
     
-    # Eğer "Yeni Hedef" modu aktifse veya hiç hedef yoksa
     if not goal or request.GET.get('new_goal') == 'true':
-        # Hedef olsa bile 'new_goal' geldiyse kullanıcıyı seçim ekranına hapsediyoruz
         return render(request, 'tracking/dashboard.html', {
             'goal': None, 
             'all_active_goals': all_active_goals,
@@ -173,7 +182,6 @@ def create_goal(request):
     initial_score = request.session.get('calculated_score')
     chosen_type = request.session.get('chosen_type')
     
-    # Eğer puan yoksa, kullanıcıyı anket seçim sayfasına (dashboard içindeki seçime) gönder
     if initial_score is None: 
         return redirect('/tracking/dashboard/?new_goal=true')
         
@@ -193,7 +201,6 @@ def create_goal(request):
                 goal.initial_score = int(initial_score)
                 goal.save()
         
-        # İşlem bitince oturumu temizle
         request.session.pop('calculated_score', None)
         request.session.pop('chosen_type', None)
         return redirect('tracking:dashboard')
