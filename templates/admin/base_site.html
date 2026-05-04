@@ -2,65 +2,66 @@
 
 {% block extrastyle %}
 <style>
-    /* 1. TÜM RENK DEĞİŞKENLERİNİ EZELİM (Yeşil ve Beyaz Tonları) */
+    /* 1. TÜM ARKA PLANI BEYAZA ZORLA */
     :root {
-        --primary: #198754 !important; /* Uygulamanın yeşili */
-        --secondary: #f8f9fa !important;
-        --header-bg: #198754 !important;
-        --header-color: #ffffff !important;
-        --breadcrumbs-bg: #e9ecef !important;
+        --primary: #468c46 !important; /* Logondaki yeşil tonu */
+        --body-bg: #ffffff !important;
+        --darker-bg: #f8f9fa !important;
     }
 
-    /* 2. ARKA PLANI BEYAZA ZORLAYALIM */
-    body, #content, .module, #content-main { 
+    body, #content, .module, #content-main, .dashboard .module table th { 
         background-color: #ffffff !important; 
-        color: #212529 !important; 
+        color: #333333 !important; 
     }
 
-    /* 3. ÜST BAR (YEŞİL) */
-    #header { 
-        background: #198754 !important; 
-        color: white !important; 
-        border-bottom: 3px solid #146c43 !important;
-    }
-
-    #header a:link, #header a:visited { color: white !important; }
-
-    /* 4. BAŞLIKLAR VE MODÜLLER (YEŞİL TONLARI) */
+    /* 2. SİYAH KALAN MODÜL BAŞLIKLARINI VE KUTULARI DÜZELT */
     .module h2, .module caption, .inline-group h2 { 
-        background: #eaf5ea !important; 
-        color: #198754 !important; 
-        border-bottom: 1px solid #198754 !important;
+        background: #eaf5ea !important; /* Çok açık yeşil */
+        color: #468c46 !important; 
+        border-bottom: 2px solid #468c46 !important;
     }
 
-    div.breadcrumbs { 
-        background: #f8f9fa !important; 
-        color: #6c757d !important;
-        border-bottom: 1px solid #dee2e6 !important;
+    /* Görseldeki o inatçı siyah satırları ve kutuları temizle */
+    .module table tbody tr, .module table tbody td, .module table tbody th {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+        border-bottom: 1px solid #eee !important;
     }
 
-    /* 5. TABLOLAR (TEMİZ BEYAZ/GRİ) */
-    table thead th { 
-        background: #f8f9fa !important; 
-        color: #198754 !important; 
-        border-bottom: 2px solid #198754 !important;
+    /* 3. SAĞDAKİ "SON EYLEMLER" PANELİ */
+    #content-related {
+        background: #fdfdfd !important;
+        border-left: 1px solid #eee !important;
     }
 
-    tr.row1 { background: #ffffff !important; }
-    tr.row2 { background: #fdfdfd !important; }
-
-    /* 6. BUTONLAR (YEŞİL) */
-    .button, input[type=submit], .submit-row input {
-        background: #198754 !important;
-        border: none !important;
+    #content-related .module h2 {
+        background: #468c46 !important;
         color: white !important;
-        font-weight: bold !important;
-        border-radius: 20px !important; /* Uygulaman gibi yuvarlak hatlar */
     }
 
-    /* 7. DJANGO DARK MODE DESTEĞİNİ ETKİSİZ HALE GETİRME */
+    /* 4. ÜST MENÜ (YEŞİL) */
+    #header { 
+        background: #468c46 !important; 
+        color: white !important;
+    }
+
+    /* 5. BUTONLAR VE İKONLAR */
+    .button, input[type=submit], .submit-row input, .addlink, .changelink {
+        background-color: #468c46 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        padding: 5px 15px !important;
+    }
+
+    /* 6. KARANLIK MODU TAMAMEN DEVRE DIŞI BIRAK */
     @media (prefers-color-scheme: dark) {
-        body { background-color: white !important; color: black !important; }
+        body, #content, .module, #content-main, 
+        .module table tbody tr, .module table tbody td {
+            background-color: #ffffff !important;
+            color: #333333 !important;
+        }
+        #header { background: #468c46 !important; }
+        .module h2 { background: #eaf5ea !important; color: #468c46 !important; }
     }
 </style>
 {% endblock %}
