@@ -48,19 +48,24 @@ DEPENDENCY_SURVEYS = {
     ]
 }
 
-# --- ROZET KONTROL FONKSİYONU (DÜZELTİLDİ - TARİH HESAPLAMA EKLENDİ) ---
+# --- ROZET KONTROL FONKSİYONU (KESİN ÇÖZÜM - TARİHİ ZORLA GÜNCELLEME) ---
 def check_and_assign_badges(user, goal, streak):
+    # 'days_required' alanına göre kazanılan rozetleri çek
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
-        # get_or_create yerine güncelleme odaklı gidelim
+        # Rozet kaydını bul veya yarat
         user_badge, created = UserBadge.objects.get_or_create(user=user, badge=badge)
         
-        # Tarihi her zaman hesapla ve üzerine yaz (Garanti yöntem)
+        # --- ZAMAN MAKİNESİ MANTIĞI ---
+        # Gerçek Tarih = Hedef Başlangıcı + Rozet Gün Sayısı
+        # Örn: 1 Nisan + 7 gün = 8 Nisan. 4 Mayıs değil!
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
         
+        # Gelecek bir tarih atanmasın diye kontrol
         if calculated_date > datetime.date.today():
             calculated_date = datetime.date.today()
         
+        # Tarihi üzerine yaz ve kaydet
         user_badge.earned_at = calculated_date
         user_badge.save()
 
@@ -101,7 +106,7 @@ def dashboard(request):
     else:
         current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
     
-    # Veri girişi veya Sayfa Yüklemesinde rozetleri kontrol et
+    # Her durumda rozetleri kontrol et ve tarihleri güncelle
     if request.method == 'POST':
         log_form = DailyLogForm(request.POST, user=request.user)
         if log_form.is_valid():
@@ -120,7 +125,6 @@ def dashboard(request):
     days_in_month = (end_of_month - start_of_month).days
     success_rate = int((monthly_clean_count / days_in_month) * 100) if days_in_month > 0 else 0
 
-    # Analiz metinleri
     analysis_options = {
         "level_1": ["Vücudun dopamin dengesini yeniden kurmaya başladı!", "Beynindeki Prefrontal Korteks direksiyonun başında!"],
         "level_2": ["İraden bir kas gibi güçleniyor!", "Beyninde nöroplastisite gerçekleşiyor!"],
@@ -162,7 +166,7 @@ def dashboard(request):
     }
     return render(request, 'tracking/dashboard.html', context)
 
-# SOS ve Survey kısımları (Aynı kaldı)
+# SOS ve Survey kısımları (Değişmedi)
 @login_required(login_url='/accounts/login/')
 def send_crisis_notification(request):
     if request.method == 'POST':
@@ -221,4 +225,4 @@ def create_goal(request):
         return redirect('tracking:dashboard')
     else:
         form = GoalForm(initial={'dependency_type': chosen_type})
-    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal, 'type': chosen_type})
+    return render(request, 'tracking/create_goal.html', {'form': form, 'score': initial_score, 'exists': existing_goal, 'type': chosen_type})s
