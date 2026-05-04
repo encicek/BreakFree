@@ -2,109 +2,106 @@
 
 {% block extrastyle %}
 <style>
-    /* --- SOFT MINT & PROFESSIONAL GREY THEME --- */
+    /* --- UNIFIED BREAKFREE ADMIN THEME --- */
     :root {
-        --deep-green: #2d5a27 !important;   /* Ana kurumsal yeşil */
-        --mint-green: #468c46 !important;   /* Parlak detaylar */
-        --soft-bg: #f0f2f0 !important;      /* Ekranın genel gri-yeşil tonu (BEYAZ DEĞİL) */
-        --card-bg: #ffffff !important;      /* Kartların içi beyaz kalsın ki temiz görünsün */
-        --border-green: #c2d6c2 !important; /* Belirgin çizgiler */
+        --primary-green: #468c46 !important; /* Son Eylemler'deki yeşil tonun */
+        --bg-soft-grey: #f4f7f4 !important;  /* Beyazı kıran hafif gri-yeşil arka plan */
+        --text-dark: #333333 !important;
+        --border-color: #d1d1d1 !important;
     }
 
     /* 1. GENEL ARKA PLAN */
     body, #content { 
-        background-color: var(--soft-bg) !important; 
-        color: #2c3e50 !important;
+        background-color: var(--bg-soft-grey) !important; 
+        color: var(--text-dark) !important;
     }
 
-    /* 2. ÜST BAR (DARK GREEN) */
+    /* 2. ÜST BAR */
     #header { 
-        background: var(--deep-green) !important; 
-        padding: 15px 40px !important;
-        border-bottom: 4px solid var(--mint-green) !important;
+        background: var(--primary-green) !important; 
+        padding: 12px 40px !important;
     }
 
-    /* 3. MODÜL KARTLARI (KUTULARI DAHA BELİRGİN YAPTIK) */
-    .module {
-        background: var(--card-bg) !important;
-        border: 1px solid var(--border-green) !important;
-        border-radius: 10px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05) !important;
-        margin-bottom: 30px !important;
-        overflow: hidden !important;
-    }
-
-    /* GRUP BAŞLIKLARI (COMMUNITY, TRACKING vs.) */
-    .module h2, .module caption, .inline-group h2 { 
-        background: #e6eee6 !important; /* Başlıklar hafif renkli olsun */
-        color: var(--deep-green) !important; 
-        font-weight: 800 !important;
-        font-size: 1rem !important;
-        padding: 12px 18px !important;
-        border-bottom: 2px solid var(--mint-green) !important;
+    /* 3. BAŞLIKLAR (COMMUNITY, TRACKING, KİMLİK DOĞRULAMA VE SON EYLEMLER UYUMU) */
+    /* Tüm grup başlıklarını sağdaki 'Son Eylemler' ile aynı font ve renge çekiyoruz */
+    .module h2, .module caption, .inline-group h2, #content-related h2 { 
+        background: var(--primary-green) !important; 
+        color: #ffffff !important; 
+        font-family: 'Roboto', 'Segoe UI', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
         text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        padding: 12px 15px !important;
+        border: none !important;
+        border-radius: 4px 4px 0 0 !important;
     }
 
-    /* 4. TABLO VE ÇİZGİLER (DAHA BELİRGİN) */
+    /* 4. MODÜLLER VE KART YAPISI */
+    .module {
+        background: #ffffff !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        margin-bottom: 25px !important;
+    }
+
+    /* 5. TABLO VE SATIRLAR */
     .module table tbody tr {
-        border-bottom: 1.5px solid #e0e0e0 !important; /* Çizgiler daha net */
+        border-bottom: 1px solid #eeeeee !important;
     }
 
     .module table tbody tr:hover {
-        background-color: #f7faf7 !important;
+        background-color: #f9fff9 !important;
     }
 
     .module table td, .module table th {
-        padding: 14px !important;
+        padding: 12px 15px !important;
     }
 
     /* Model İsimleri */
     .module table th a {
-        color: var(--deep-green) !important;
+        color: var(--primary-green) !important;
         font-weight: 600 !important;
     }
 
-    /* 5. BUTONLAR (YEŞİL VE DOLGUN) */
+    /* 6. BUTONLAR */
     .addlink, .changelink {
-        background-color: var(--mint-green) !important;
+        background-color: var(--primary-green) !important;
         color: white !important;
-        border-radius: 5px !important;
-        padding: 6px 15px !important;
-        font-size: 0.8rem !important;
+        border-radius: 4px !important;
+        padding: 4px 12px !important;
         font-weight: bold !important;
-        text-transform: uppercase !important;
-        transition: transform 0.2s !important;
+        font-size: 0.85rem !important;
     }
 
-    .addlink:hover, .changelink:hover {
-        background-color: var(--deep-green) !important;
-        transform: translateY(-2px) !important;
-    }
-
-    /* 6. SAĞDAKİ SON EYLEMLER PANELİ */
-    #content-related {
-        background: #ffffff !important;
-        border: 1px solid var(--border-green) !important;
-        border-radius: 10px !important;
-        margin-left: 20px !important;
-    }
-
-    /* 7. KARANLIK MODU ENGELLEME */
+    /* 7. DARK MODE ENGELLEME */
     @media (prefers-color-scheme: dark) {
-        body, #content, .module, .module table tbody tr { 
-            background-color: var(--card-bg) !important; 
-            color: #333 !important; 
+        body, #content, .module, tr.row1, tr.row2, .module table tbody tr { 
+            background-color: #ffffff !important; 
+            color: var(--text-dark) !important; 
         }
-        #header { background: var(--deep-green) !important; }
-        .module h2 { background: #e6eee6 !important; color: var(--deep-green) !important; }
+        #header, .module h2, #content-related h2 { background: var(--primary-green) !important; color: white !important; }
     }
 </style>
+
+<script>
+    // TRACKİNG yazan yeri TRACKING olarak değiştirmek için küçük bir script
+    document.addEventListener("DOMContentLoaded", function() {
+        const headers = document.querySelectorAll('.module h2, .module caption');
+        headers.forEach(header => {
+            if (header.textContent.includes('TRACKİNG')) {
+                header.textContent = header.textContent.replace('TRACKİNG', 'TRACKING');
+            }
+        });
+    });
+</script>
 {% endblock %}
 
 {% block branding %}
 <h1 id="site-name">
-    <a href="{% url 'admin:index' %}" style="color: white !important; font-weight: bold; letter-spacing: 1px;">
-        BREAKFREE <span style="font-weight: 300; opacity: 0.8;">| SİSTEM PANELİ</span>
+    <a href="{% url 'admin:index' %}" style="color: white !important; font-weight: bold;">
+        BreakFree Yönetim Paneli
     </a>
 </h1>
 {% endblock %}
