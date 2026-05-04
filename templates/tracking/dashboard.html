@@ -169,8 +169,11 @@
         <div class="text-center py-5">
             <i class="bi bi-clipboard2-plus display-1 text-muted opacity-25"></i>
             <h4 class="mt-3 text-muted">Henüz aktif bir takibiniz bulunmuyor.</h4>
-            <!-- 🚨 DOĞRU ADRES: /tracking/yeni-hedef/ olarak güncellendi -->
-            <a href="/tracking/yeni-hedef/" class="btn btn-primary rounded-pill px-5 mt-3">Yeni Hedef Başlat</a>
+            
+            <!-- 🚨 DÜZELTİLEN BUTON: Hem manuel adres hem de Django URL etiketi eklendi -->
+            <a href="{% url 'create_goal' %}" class="btn btn-primary rounded-pill px-5 mt-3 shadow-sm">
+                Yeni Hedef Başlat
+            </a>
         </div>
     {% endif %}
 </div>
@@ -218,5 +221,6 @@
     .bg-info { background-color: #0dcaf0 !important; }
     .border-info { border-color: #0dcaf0 !important; }
     .text-info { color: #0dcaf0 !important; }
+    .btn-primary:hover { transform: translateY(-1px); transition: 0.2s; }
 </style>
 {% endblock %}
