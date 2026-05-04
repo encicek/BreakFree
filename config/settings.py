@@ -26,11 +26,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'accounts',
-    'tracking',
+    'tracking.apps.TrackingConfig',  # Sadece bu satırı 'tracking' yerine bu şekilde güncelledik
     'community',
     'core',
 ]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
