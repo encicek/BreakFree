@@ -1,3 +1,6 @@
+"""
+Django settings for config project.
+"""
 import dj_database_url
 import os
 from pathlib import Path
@@ -26,10 +29,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'accounts',
-    'tracking.apps.TrackingConfig',  # Sadece bu satırı 'tracking' yerine bu şekilde güncelledik
+    'tracking.apps.TrackingConfig',  # Admin özelleştirmeleri için tam yol
     'community',
     'core',
 ]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -46,12 +50,12 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # ÖNEMLİ: Ana dizindeki templates klasörünü burada tanımlıyoruz
+        # ÖNEMLİ: Ana dizindeki templates klasörü
         'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.debug', # Admin için bu önemli
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -99,8 +103,11 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') # Render için gerekli
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Render'da dosyaların düzgün sunulması için gerekli olan satır
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # URL Yönlendirmeleri
 LOGIN_URL = '/accounts/login/'
@@ -114,5 +121,3 @@ CSRF_TRUSTED_ORIGINS = ['https://breakfree-0apn.onrender.com']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-
-
