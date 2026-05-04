@@ -16,18 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.contrib.auth import views as auth_views
 from django.views.generic import RedirectView
 
-# Admin Paneli Özelleştirmeleri
+# Admin Paneli Özelleştirmeleri (Opsiyonel ama dursun)
 admin.site.site_header = "BreakFree Yönetim Paneli"
 admin.site.site_title = "BreakFree Admin"
 admin.site.index_title = "Sistem Yönetimine Hoş Geldiniz"
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='/login/', permanent=True)), # Ana sayfayı login'e at
+    # 1. Siteye ilk girildiğinde direkt giriş ekranına (login) atar
+    path('', RedirectView.as_view(url='/accounts/login/', permanent=True)), 
+    
+    # 2. Uygulama Yolları
     path('admin/', admin.site.urls),
-    path('login/', include('django.contrib.auth.urls')), # Django'nun hazır login sistemini kullanabiliriz
     path('tracking/', include('tracking.urls')),
+    path('community/', include(('community.urls', 'community'), namespace='community')),
     path('accounts/', include('accounts.urls')), 
 ]
