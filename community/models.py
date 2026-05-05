@@ -49,7 +49,19 @@ class Post(models.Model):
         
         # Sadece yeni paylaşımlarda otomatik tarama yap
         if is_new:
-            forbidden_words = ['küfür1', 'hakaret2', 'yasaklı3'] # Listeyi buraya ekleyebilirsin
+            forbidden_words = [
+    # 1. Doğrudan Hakaret ve Küfür (Topluluk huzuru için)
+    'küfür1', 'hakaret1', 'gerizekalı', 'aptal', 'salak',
+    
+    # 2. Reklam ve Spam (Botları engellemek için)
+    'satılık', 'fiyat', 'tıkla', 'kazan', 'link.com', 'ucretsiz',
+    
+    # 3. Zararlı Yönlendirme (Bağımlılığı tetikleyebilecek veya yanlış bilgi)
+    'torbacı', 'satış', 'uyuşturucu_adı_1', 'uyuşturucu_adı_2',
+    
+    # 4. Şiddet ve Taciz
+    'öldür', 'geber', 'nefret', 'taciz'
+] # Listeyi buraya ekleyebilirsin
             content_lower = self.content.lower()
             
             for word in forbidden_words:
