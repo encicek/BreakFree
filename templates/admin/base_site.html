@@ -1,0 +1,122 @@
+{% extends "admin/base.html" %}
+
+{% block extrastyle %}
+<style>
+    /* --- BREAKFREE UNIFIED GREEN & WHITE DESIGN --- */
+    :root {
+        --breakfree-green: #468c46 !important; /* Giriş sayfasındaki ana yeşil */
+        --bg-main: #f8f9fa !important;         /* Beyazı kıran hafif gri arka plan */
+        --bg-card: #ffffff !important;         /* Kartların içi saf beyaz */
+        --text-dark: #333333 !important;
+        --border-light: #d1d1d1 !important;
+    }
+
+    /* 1. TÜM SİYAHLIKLARI YOK ET VE ARKA PLANI EŞİTLE */
+    body, #content, .module, #content-main, .change-form, 
+    .submit-row, .paginator, #nav-sidebar { 
+        background-color: var(--bg-main) !important; 
+        color: var(--text-dark) !important; 
+        box-shadow: none !important;
+    }
+
+    /* GÖRSELDEKİ SİYAH FOOTER ALANINI TAMAMEN GİZLE */
+    #footer, .footer {
+        display: none !important;
+    }
+
+    /* 2. ÜST BAR (HEADER) */
+    #header { 
+        background: var(--breakfree-green) !important; 
+        color: white !important;
+        padding: 15px 40px !important;
+    }
+
+    /* 3. GRUP BAŞLIKLARI (SON EYLEMLERLE AYNI TASARIM) */
+    .module h2, .module caption, .inline-group h2, #content-related h2 { 
+        background: var(--breakfree-green) !important; 
+        color: #ffffff !important; 
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        padding: 12px 15px !important;
+        border: none !important;
+        border-radius: 4px 4px 0 0 !important;
+    }
+
+    /* 4. KART YAPISI (GİRİŞ SAYFASINDAKİ GİBİ BEYAZ KUTULAR) */
+    .module, .form-row, .submit-row {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 6px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .form-row { padding: 15px !important; margin-bottom: 0 !important; border-radius: 0 !important; }
+
+    /* 5. EKLE VE DEĞİŞTİR SAYFALARINDAKİ SİYAH BUTON BARI DÜZELTME */
+    .submit-row {
+        background: var(--bg-card) !important; /* Siyahlığı beyaza çevirdik */
+        padding: 15px !important;
+        display: flex !important;
+        gap: 10px !important;
+        flex-direction: row-reverse !important;
+        border-radius: 6px !important;
+    }
+
+    /* KAYDET / DEĞİŞTİR BUTONLARI */
+    .submit-row input, .submit-row input.default, .button, .default {
+        background: var(--breakfree-green) !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        font-weight: bold !important;
+        border-radius: 4px !important;
+        text-transform: uppercase !important;
+        cursor: pointer !important;
+    }
+
+    /* 6. TABLO VE SATIR RENKLERİ */
+    .module table tbody tr {
+        background-color: var(--bg-card) !important;
+        border-bottom: 1px solid #eeeeee !important;
+    }
+
+    .module table tbody tr:hover {
+        background-color: #f1f8f1 !important;
+    }
+
+    .module table th a {
+        color: var(--breakfree-green) !important;
+        font-weight: 600 !important;
+    }
+
+    /* 7. DARK MODE ZORLAMASINI TAMAMEN SİL */
+    @media (prefers-color-scheme: dark) {
+        body, #content, .module, .form-row, .submit-row, #nav-sidebar, 
+        textarea, input, select { 
+            background-color: var(--bg-main) !important; 
+            color: var(--text-dark) !important; 
+        }
+        .module, .form-row, .submit-row { background: var(--bg-card) !important; }
+        #header, .module h2 { background: var(--breakfree-green) !important; color: white !important; }
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const headers = document.querySelectorAll('.module h2, .module caption, label, a');
+        headers.forEach(el => {
+            if (el.textContent.includes('TRACKİNG')) {
+                el.textContent = el.textContent.replace('TRACKİNG', 'TRACKING');
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}" style="color: white !important; font-weight: bold;">
+        BreakFree Yönetim Paneli
+    </a>
+</h1>
+{% endblock %}

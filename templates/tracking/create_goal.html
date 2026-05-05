@@ -4,18 +4,36 @@
 <div class="row mt-5">
     <div class="col-md-6 mx-auto">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white text-center">
-                <h4 class="mb-0">Yeni Bir Hedef Belirle</h4>
+            <div class="card-header bg-primary text-white text-center py-3">
+                <h4 class="mb-0 fw-bold">Yeni Bir Hedef Belirle</h4>
             </div>
             <div class="card-body p-4">
-                <p class="text-muted text-center mb-4">Kendine uygun bağımlılık türünü seç ve başlangıç skorunu girerek yeni ve temiz bir sayfa aç.</p>
+                <p class="text-muted text-center mb-4 small">Kendine uygun bağımlılık türünü seç ve temiz bir sayfa aç.</p>
                 
                 <form method="POST">
                     {% csrf_token %} 
                     
-                    {{ form.as_p }}
+                    <!-- Bağımlılık Türü -->
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1 small text-muted">{{ form.dependency_type.label }}</label>
+                        {{ form.dependency_type }}
+                    </div>
+
+                    <!-- Motivasyon Notu -->
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1 small text-muted">{{ form.target_note.label }}</label>
+                        {{ form.target_note }}
+                        <!-- help_text burada çağrılmadığı için alttaki yazı görünmez -->
+                    </div>
+
+                    <!-- Bio -->
+                    <div class="mb-3">
+                        <label class="fw-bold mb-1 small text-muted">{{ form.bio.label }}</label>
+                        {{ form.bio }}
+                        <!-- help_text burada çağrılmadığı için alttaki yazı görünmez -->
+                    </div>
                     
-                    <button type="submit" class="btn btn-success w-100 mt-3 fw-bold">Hedefi Başlat</button>
+                    <button type="submit" class="btn btn-success w-100 mt-3 py-2 fw-bold shadow-sm">Hedefi Başlat</button>
                 </form>
             </div>
         </div>
