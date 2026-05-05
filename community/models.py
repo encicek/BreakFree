@@ -29,6 +29,9 @@ class Post(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # 🚨 YENİ EKLENDİ: Seri moderasyon için şikayet sayacı
+    report_count = models.IntegerField(default=0, verbose_name="Şikayet Sayısı")
+
     def total_supports(self):
         return self.supports.count()
 
@@ -37,6 +40,31 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+    # 🚨 YENİ EKLENDİ: Otomatik Yasaklı Kelime Filtresi
+    def save(self, *args, **kwargs):
+        # Önce postun kendisini kaydet
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        
+        # Sadece yeni paylaşımlarda otomatik tarama yap
+        if is_new:
+            forbidden_words = ['küfür1', 'hakaret2', 'yasaklı3'] # Listeyi buraya ekleyebilirsin
+            content_lower = self.content.lower()
+            
+            for word in forbidden_words:
+                if word in content_lower:
+                    # Yasaklı kelime bulunduysa otomatik Report oluştur
+                    Report.objects.create(
+                        reporter=User.objects.filter(is_superuser=True).first(), # Sistem adına admini ata
+                        post=self,
+                        reason='inappropriate',
+                        description=f"Otomatik Filtre: İçerikte '{word}' kelimesi tespit edildi."
+                    )
+                    # Postun kendi şikayet sayısını da artır
+                    self.report_count += 1
+                    super().save(update_fields=['report_count'])
+                    break
 
 # --- YORUM MODELİ ---
 class Comment(models.Model):
@@ -85,7 +113,6 @@ class Friendship(models.Model):
         on_delete=models.CASCADE, 
         related_name='friendships_received'
     )
-    # Varsayılan olarak beklemede başlar, kabul edilince 'accepted' olur
     status = models.CharField(
         max_length=10, 
         choices=STATUS_CHOICES, 
@@ -117,8 +144,6 @@ class Notification(models.Model):
         max_length=20, 
         choices=NOTIFICATION_TYPES
     )
-    # 🚨 KRİTİK DÜZENLEME: Arkadaşlık isteğinde bir post bağlı olmayacağı için
-    # bu alanın null ve boş bırakılabilir olması şarttır.
     post = models.ForeignKey(
         Post, 
         on_delete=models.CASCADE, 
