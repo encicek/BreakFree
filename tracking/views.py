@@ -50,6 +50,7 @@ DEPENDENCY_SURVEYS = {
 
 # --- ROZET KONTROL FONKSİYONU ---
 def check_and_assign_badges(user, goal, streak):
+    # Kullanıcının kazandığı rozetleri belirliyoruz
     available_badges = Badge.objects.filter(days_required__lte=streak)
     for badge in available_badges:
         calculated_date = goal.start_date + datetime.timedelta(days=badge.days_required)
@@ -84,7 +85,7 @@ def dashboard(request):
             'goal': None, 
             'all_active_goals': all_active_goals,
             'new_goal_mode': True,
-            'dependency_choices': DEPENDENCY_SURVEYS.keys() # Anket seçeneklerini buraya da ekledik
+            'dependency_choices': DEPENDENCY_SURVEYS.keys()
         })
 
     today = datetime.date.today()
@@ -95,12 +96,14 @@ def dashboard(request):
     else:
         end_of_month = datetime.date(current_year, current_month + 1, 1)
     
+    # Seri Hesaplama
     last_relapse = goal.logs.filter(relapse=True).order_by('-date').first()
     if last_relapse:
         current_streak = goal.logs.filter(relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
     else:
         current_streak = goal.logs.filter(relapse=False).values('date').distinct().count()
     
+    # Veri Girişi ve Rozet Atama
     if request.method == 'POST':
         log_form = DailyLogForm(request.POST, user=request.user)
         if log_form.is_valid():
@@ -112,7 +115,9 @@ def dashboard(request):
         check_and_assign_badges(request.user, goal, current_streak)
         log_form = DailyLogForm(initial={'date': today, 'goal': goal}, user=request.user)
 
-    user_badges = UserBadge.objects.filter(user=request.user).select_related('badge').order_by('earned_at')
+    # Rozetleri çekiyoruz (Hem profil hem dashboard aynı yere bakıyor)
+    user_badges = UserBadge.objects.filter(user=request.user).select_related('badge').order_by('-earned_at')
+    
     current_month_logs = goal.logs.filter(date__gte=start_of_month, date__lt=end_of_month).order_by('date')
     monthly_clean_count = current_month_logs.filter(relapse=False).values('date').distinct().count()
     days_in_month = (end_of_month - start_of_month).days
@@ -156,7 +161,7 @@ def dashboard(request):
         'avg_craving': round(avg_craving, 1), 'bio_status': bio_status, 'user_badges': user_badges,
         'has_entry_today': has_entry_today, 'prev_month': 12 if current_month == 1 else current_month - 1,
         'next_month': 1 if current_month == 12 else current_month + 1,
-        'dependency_choices': DEPENDENCY_SURVEYS.keys() # Butonların görünmesi için gerekli anahtarlar
+        'dependency_choices': DEPENDENCY_SURVEYS.keys()
     }
     return render(request, 'tracking/dashboard.html', context)
 
