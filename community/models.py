@@ -20,6 +20,12 @@ class Post(models.Model):
         verbose_name="Anonim Paylaş"
     )
     
+    # 🚨 YENİ EKLENDİ: Görünmezlik Filtresi (Yasaklı içerik anında yayından kalkar)
+    is_published = models.BooleanField(
+        default=True,
+        verbose_name="Yayında mı?"
+    )
+    
     addiction_type = models.CharField(
         max_length=20,
         choices=ADDICTION_CHOICES,
@@ -41,42 +47,45 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-    # 🚨 YENİ EKLENDİ: Otomatik Yasaklı Kelime Filtresi
+    # 🚨 GÜNCELLENDİ: Otomatik Filtre ve Gizleme Mantığı
     def save(self, *args, **kwargs):
-        # Önce postun kendisini kaydet
         is_new = self._state.adding
+        
+        # Yasaklı kelimeler listesi
+        forbidden_words = [
+            'küfür1', 'hakaret1', 'gerizekalı', 'aptal', 'salak', 'ezik',
+            'satılık', 'fiyat', 'tıkla', 'kazan', 'link.com', 'ucretsiz',
+            'torbacı', 'satış', 'öldür', 'geber', 'nefret', 'taciz'
+        ]
+        
+        content_lower = self.content.lower()
+        found_forbidden = False
+        
+        for word in forbidden_words:
+            if word in content_lower:
+                found_forbidden = True
+                # Yasaklı kelime varsa gönderiyi otomatik gizle
+                self.is_published = False
+                break
+        
+        # Önce postu kaydet (is_published değeriyle beraber)
         super().save(*args, **kwargs)
         
-        # Sadece yeni paylaşımlarda otomatik tarama yap
-        if is_new:
-            forbidden_words = [
-    # 1. Doğrudan Hakaret ve Küfür (Topluluk huzuru için)
-    'küfür1', 'hakaret1', 'gerizekalı', 'aptal', 'salak',
-    
-    # 2. Reklam ve Spam (Botları engellemek için)
-    'satılık', 'fiyat', 'tıkla', 'kazan', 'link.com', 'ucretsiz',
-    
-    # 3. Zararlı Yönlendirme (Bağımlılığı tetikleyebilecek veya yanlış bilgi)
-    'torbacı', 'satış', 'uyuşturucu_adı_1', 'uyuşturucu_adı_2',
-    
-    # 4. Şiddet ve Taciz
-    'öldür', 'geber', 'nefret', 'taciz'
-] # Listeyi buraya ekleyebilirsin
-            content_lower = self.content.lower()
+        # Eğer yasaklı kelime bulunduysa ve bu yeni bir post ise otomatik rapor oluştur
+        if found_forbidden and is_new:
+            # Sistem adına admini bul veya ilk kullanıcıyı ata
+            admin_user = User.objects.filter(is_superuser=True).first()
             
-            for word in forbidden_words:
-                if word in content_lower:
-                    # Yasaklı kelime bulunduysa otomatik Report oluştur
-                    Report.objects.create(
-                        reporter=User.objects.filter(is_superuser=True).first(), # Sistem adına admini ata
-                        post=self,
-                        reason='inappropriate',
-                        description=f"Otomatik Filtre: İçerikte '{word}' kelimesi tespit edildi."
-                    )
-                    # Postun kendi şikayet sayısını da artır
-                    self.report_count += 1
-                    super().save(update_fields=['report_count'])
-                    break
+            Report.objects.create(
+                reporter=admin_user if admin_user else self.user,
+                post=self,
+                reason='inappropriate',
+                description=f"Otomatik Filtre: İçerik gizlendi. Yasaklı kelime tespit edildi."
+            )
+            
+            # Şikayet sayısını güncelle
+            self.report_count += 1
+            super().save(update_fields=['report_count'])
 
 # --- YORUM MODELİ ---
 class Comment(models.Model):
