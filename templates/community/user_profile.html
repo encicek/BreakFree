@@ -6,241 +6,241 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container mt-5">
-    <!-- 1. Profil Başlık Alanı -->
-    <div class="card shadow-sm border-0 mb-4 bg-white">
-        <div class="card-body d-flex justify-content-between align-items-center p-4">
-            <div>
-                <h2 class="mb-1 fw-bold text-dark">{{ profile_user.username|capfirst }} Profil Gözlemi</h2>
-                <p class="text-muted mb-0">
-                    {% if request.user == profile_user %}
-                        Kendi gelişimini ve yol arkadaşlarının durumunu buradan yönetebilirsin.
-                    {% else %}
-                        Arkadaşının hedeflerini ve gelişimini buradan takip edebilirsin.
-                    {% endif %}
-                </p>
-            </div>
+    <!-- 1. Profil Başlık Alanı -->
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body d-flex justify-content-between align-items-center p-4">
+            <div>
+                <h2 class="mb-1 fw-bold text-dark">{{ profile_user.username|capfirst }} Profil Gözlemi</h2>
+                <p class="text-muted mb-0">
+                    {% if request.user == profile_user %}
+                        Kendi gelişimini ve yol arkadaşlarının durumunu buradan yönetebilirsin.
+                    {% else %}
+                        Arkadaşının hedeflerini ve gelişimini buradan takip edebilirsin.
+                    {% endif %}
+                </p>
+            </div>
 
-            <!-- ARKADAŞLIK BUTONLARI -->
-            {% if profile_user != request.user %}
-                <div class="d-flex align-items-center gap-2">
-                    {% if status_label == 'friends' %}
-                        <div class="btn-group shadow-sm rounded-pill">
-                            <button class="btn btn-outline-primary disabled fw-bold px-4">
-                                <i class="bi bi-people-fill me-1"></i> Arkadaşsınız
-                            </button>
-                            <button type="button" class="btn btn-outline-danger px-3" 
-                                    onclick="confirmRemoval('{% url 'community:remove_friend' user_id=profile_user.id %}')">
-                                <i class="bi bi-person-x-fill"></i>
-                            </button>
-                        </div>
-                    {% elif status_label == 'sent' %}
-                        <button class="btn btn-warning disabled rounded-pill px-4 shadow-sm fw-bold text-white">
-                            <i class="bi bi-clock-history me-1"></i> İstek Gönderildi
-                        </button>
-                    {% elif status_label == 'received' %}
-                        <a href="{% url 'community:notifications' %}" class="btn btn-info rounded-pill px-4 shadow-sm fw-bold text-white">
-                            <i class="bi bi-person-check-fill me-1"></i> İsteği Yanıtla
-                        </a>
-                    {% else %}
-                        <a href="{% url 'community:send_request' user_id=profile_user.id %}" 
-                           class="btn btn-success shadow-sm fw-bold rounded-pill px-4">
-                            <i class="bi bi-person-plus-fill me-1"></i> Arkadaş Ekle
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-    </div>
+            <!-- ARKADAŞLIK BUTONLARI -->
+            {% if profile_user != request.user %}
+                <div class="d-flex align-items-center gap-2">
+                    {% if status_label == 'friends' %}
+                        <div class="btn-group shadow-sm rounded-pill">
+                            <button class="btn btn-outline-primary disabled fw-bold px-4">
+                                <i class="bi bi-people-fill me-1"></i> Arkadaşsınız
+                            </button>
+                            <button type="button" class="btn btn-outline-danger px-3" 
+                                    onclick="confirmRemoval('{% url 'community:remove_friend' user_id=profile_user.id %}')">
+                                <i class="bi bi-person-x-fill"></i>
+                            </button>
+                        </div>
+                    {% elif status_label == 'sent' %}
+                        <button class="btn btn-warning disabled rounded-pill px-4 shadow-sm fw-bold text-white">
+                            <i class="bi bi-clock-history me-1"></i> İstek Gönderildi
+                        </button>
+                    {% elif status_label == 'received' %}
+                        <a href="{% url 'community:notifications' %}" class="btn btn-info rounded-pill px-4 shadow-sm fw-bold text-white">
+                            <i class="bi bi-person-check-fill me-1"></i> İsteği Yanıtla
+                        </a>
+                    {% else %}
+                        <a href="{% url 'community:send_request' user_id=profile_user.id %}" 
+                           class="btn btn-success shadow-sm fw-bold rounded-pill px-4">
+                            <i class="bi bi-person-plus-fill me-1"></i> Arkadaş Ekle
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
 
-    {% if active_goals %}
-        <div class="row">
-            <!-- SOL KOLON -->
-            <div class="col-md-4">
-                <h6 class="text-muted small text-uppercase mb-3 fw-bold"><i class="bi bi-target"></i> Aktif Mücadeleler</h6>
-                
-                {% for goal in active_goals %}
-                    <div class="card shadow-sm border-0 mb-3 border-start border-4 border-primary">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="fw-bold mb-0 text-primary text-uppercase">{{ goal.get_dependency_type_display }}</h6>
-                                <span class="badge bg-light text-dark border small">{{ goal.initial_score }} Puan</span>
-                            </div>
-                            
-                            <div class="row g-0 text-center bg-light rounded p-2 mb-2">
-                                <div class="col-6 border-end">
-                                    <small class="text-muted d-block" style="font-size: 0.7rem;">KESİNTİSİZ SERİ</small>
-                                    <h4 class="fw-bold mb-0 text-success">{{ goal.streak }}</h4>
-                                </div>
-                                <div class="col-6">
-                                    <small class="text-muted d-block" style="font-size: 0.7rem;">DURUM</small>
-                                    <span class="fw-bold text-primary" style="font-size: 0.8rem;">{{ goal.status }}</span>
-                                </div>
-                            </div>
+    {% if active_goals %}
+        <div class="row">
+            <!-- SOL KOLON -->
+            <div class="col-md-4">
+                <h6 class="text-muted small text-uppercase mb-3 fw-bold"><i class="bi bi-target"></i> Aktif Mücadeleler</h6>
+                
+                {% for goal in active_goals %}
+                    <div class="card shadow-sm border-0 mb-3 border-start border-4 border-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0 text-primary text-uppercase">{{ goal.get_dependency_type_display }}</h6>
+                                <span class="badge bg-light text-dark border small">{{ goal.initial_score }} Puan</span>
+                            </div>
+                            
+                            <div class="row g-0 text-center bg-light rounded p-2 mb-2">
+                                <div class="col-6 border-end">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">KESİNTİSİZ SERİ</small>
+                                    <h4 class="fw-bold mb-0 text-success">{{ goal.streak }}</h4>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block" style="font-size: 0.7rem;">DURUM</small>
+                                    <span class="fw-bold text-primary" style="font-size: 0.8rem;">{{ goal.status }}</span>
+                                </div>
+                            </div>
 
-                            {% if request.user == profile_user %}
-                                <div class="text-end">
-                                    <a href="{% url 'community:edit_profile' goal_id=goal.id %}" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" style="font-size: 0.75rem;">
-                                        <i class="bi bi-pencil-square"></i> Bu Hedefi Düzenle
-                                    </a>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
+                            {% if request.user == profile_user %}
+                                <div class="text-end">
+                                    <a href="{% url 'community:edit_profile' goal_id=goal.id %}" class="btn btn-sm btn-link text-decoration-none p-0 text-muted" style="font-size: 0.75rem;">
+                                        <i class="bi bi-pencil-square"></i> Bu Hedefi Düzenle
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
 
-                <!-- YOL ARKADAŞLARI LİSTESİ -->
-                <div class="card shadow-sm border-0 mb-4 bg-white">
-                    <div class="card-body p-3">
-                        <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">Yol Arkadaşları</h6>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for friend in friend_list %}
-                                <a href="{% url 'community:user_profile' friend.username %}" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 shadow-sm small">
-                                    <i class="bi bi-person-circle me-1"></i>{{ friend.username|capfirst }}
-                                </a>
-                            {% empty %}
-                                <p class="small text-muted fst-italic mb-0 p-2">Henüz yol arkadaşı yok.</p>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
+                <!-- YOL ARKADAŞLARI LİSTESİ -->
+                <div class="card shadow-sm border-0 mb-4 bg-white">
+                    <div class="card-body p-3">
+                        <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">Yol Arkadaşları</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for friend in friend_list %}
+                                <a href="{% url 'community:user_profile' friend.username %}" class="btn btn-sm btn-outline-primary rounded-pill py-1 px-3 shadow-sm small">
+                                    <i class="bi bi-person-circle me-1"></i>{{ friend.username|capfirst }}
+                                </a>
+                            {% empty %}
+                                <p class="small text-muted fst-italic mb-0 p-2">Henüz yol arkadaşı yok.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
 
-                <!-- Başarı Rozetleri -->
-                <div class="card shadow-sm border-0 mb-4 bg-white">
-                    <div class="card-body p-3">
-                        <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">Başarı Rozetleri</h6>
-                        <div class="d-flex flex-wrap gap-3 justify-content-center py-2">
-                            <div class="text-center">
-                                <div class="fs-1">🏆</div>
-                                <div class="fw-bold small" style="font-size: 0.7rem;">Kararlı</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="fs-1">⚡</div>
-                                <div class="fw-bold small" style="font-size: 0.7rem;">Hızlı Başlangıç</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <!-- Başarı Rozetleri -->
+                <div class="card shadow-sm border-0 mb-4 bg-white">
+                    <div class="card-body p-3">
+                        <h6 class="text-muted small text-uppercase mb-3 fw-bold border-bottom pb-2">Başarı Rozetleri</h6>
+                        <div class="d-flex flex-wrap gap-3 justify-content-center py-2">
+                            <div class="text-center">
+                                <div class="fs-1">🏆</div>
+                                <div class="fw-bold small" style="font-size: 0.7rem;">Kararlı</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-1">⚡</div>
+                                <div class="fw-bold small" style="font-size: 0.7rem;">Hızlı Başlangıç</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <!-- SAĞ KOLON (Grafik ve Kayıtlar) -->
-            <div class="col-md-8">
-                <!-- 🚨 10 GÜNLÜK TREND GRAFİĞİ -->
-                <div class="card shadow-sm border-0 mb-4 bg-white">
-                    <div class="card-header bg-white py-3 border-bottom">
-                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2"></i>Zorlanma Trendi (Son 10 Kayıt)</h5>
-                    </div>
-                    <div class="card-body">
-                        <div style="height: 250px;">
-                            <canvas id="profileCravingChart"></canvas>
-                        </div>
-                    </div>
-                </div>
+            <!-- SAĞ KOLON (Grafik ve Kayıtlar) -->
+            <div class="col-md-8">
+                <!-- 🚨 10 GÜNLÜK TREND GRAFİĞİ -->
+                <div class="card shadow-sm border-0 mb-4 bg-white">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-graph-up me-2"></i>Zorlanma Trendi (Son 10 Kayıt)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 250px;">
+                            <canvas id="profileCravingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- Son Günlük Kayıtları -->
-                <div class="card shadow-sm border-0 mb-4 bg-white">
-                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold">Son Günlük Kayıtları</h5>
-                        <span class="badge bg-light text-dark border">Son 5 Kayıt</span>
-                    </div>
-                    <div class="card-body p-0">
-                        {% for log in recent_logs %}
-                            <div class="d-flex justify-content-between align-items-center border-bottom p-3">
-                                <div>
-                                    <div class="d-flex align-items-center mb-1">
-                                        <span class="badge bg-primary me-2" style="font-size: 0.6rem;">{{ log.goal.get_dependency_type_display }}</span>
-                                        <p class="mb-0 text-dark small fw-bold">{{ log.date|date:"d F Y" }}</p>
-                                    </div>
-                                    <small class="text-muted">Zorlanma: {{ log.craving_level }}/10</small>
-                                    {% if log.daily_note %}
-                                        <p class="mb-0 text-dark small mt-1 opacity-75 fst-italic">"{{ log.daily_note }}"</p>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <span class="badge {% if log.relapse %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-3 shadow-sm">
-                                        {% if log.relapse %}Bozuldu{% else %}Temiz{% endif %}
-                                    </span>
-                                </div>
-                            </div>
-                        {% empty %}
-                            <div class="p-4 text-center text-muted italic">Henüz kayıt girilmemiş.</div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="alert alert-info shadow-sm border-0 p-5 text-center">
-            <i class="bi bi-info-circle display-4 d-block mb-3"></i>
-            <p class="mb-3 fw-bold fs-5">Henüz aktif bir mücadele hedefi bulunmuyor.</p>
-            {% if request.user == profile_user %}
-                <a href="{% url 'tracking:dashboard' %}?new_goal=true" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow">Hemen Bir Mücadele Başlat</a>
-            {% endif %}
-        </div>
-    {% endif %}
+                <!-- Son Günlük Kayıtları -->
+                <div class="card shadow-sm border-0 mb-4 bg-white">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">Son Günlük Kayıtları</h5>
+                        <span class="badge bg-light text-dark border">Son 5 Kayıt</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for log in recent_logs %}
+                            <div class="d-flex justify-content-between align-items-center border-bottom p-3">
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="badge bg-primary me-2" style="font-size: 0.6rem;">{{ log.goal.get_dependency_type_display }}</span>
+                                        <p class="mb-0 text-dark small fw-bold">{{ log.date|date:"d F Y" }}</p>
+                                    </div>
+                                    <small class="text-muted">Zorlanma: {{ log.craving_level }}/10</small>
+                                    {% if log.daily_note %}
+                                        <p class="mb-0 text-dark small mt-1 opacity-75 fst-italic">"{{ log.daily_note }}"</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <span class="badge {% if log.relapse %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-3 shadow-sm">
+                                        {% if log.relapse %}Bozuldu{% else %}Temiz{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="p-4 text-center text-muted italic">Henüz kayıt girilmemiş.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info shadow-sm border-0 p-5 text-center">
+            <i class="bi bi-info-circle display-4 d-block mb-3"></i>
+            <p class="mb-3 fw-bold fs-5">Henüz aktif bir mücadele hedefi bulunmuyor.</p>
+            {% if request.user == profile_user %}
+                <a href="{% url 'tracking:dashboard' %}?new_goal=true" class="btn btn-primary rounded-pill px-5 py-2 fw-bold shadow">Hemen Bir Mücadele Başlat</a>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 <!-- 🚨 SCRIPTS: Grafik ve Onay Kutusu Mantığı -->
 <script>
 // 1. Grafik Mantığı (Chart.js)
 document.addEventListener("DOMContentLoaded", function() {
-    const ctx = document.getElementById('profileCravingChart');
-    if (ctx) {
-        const labels = {{ chart_labels|safe }};
-        const data = {{ chart_data|safe }};
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels.length ? labels : ['Kayıt Yok'],
-                datasets: [{
-                    label: 'Zorlanma Seviyesi',
-                    data: data.length ? data : [0],
-                    borderColor: '#4e73df',
-                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#4e73df',
-                    borderWidth: 3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } },
-                    x: { grid: { display: false } }
-                },
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
+    const ctx = document.getElementById('profileCravingChart');
+    if (ctx) {
+        const labels = {{ chart_labels|safe }};
+        const data = {{ chart_data|safe }};
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length ? labels : ['Kayıt Yok'],
+                datasets: [{
+                    label: 'Zorlanma Seviyesi',
+                    data: data.length ? data : [0],
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#4e73df',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
 });
 
 // 2. Arkadaş Çıkarma Mantığı (SweetAlert2)
 function confirmRemoval(removeUrl) {
-    Swal.fire({
-        title: 'Emin misin?',
-        text: "Yol arkadaşlığını sonlandırmak üzeresin!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Evet, çıkar!',
-        cancelButtonText: 'Vazgeç',
-        background: '#fff',
-        borderRadius: '1.25rem',
-        customClass: {
-            title: 'fw-bold',
-            confirmButton: 'rounded-pill px-4',
-            cancelButton: 'rounded-pill px-4'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.location.href = removeUrl;
-        }
-    })
+    Swal.fire({
+        title: 'Emin misin?',
+        text: "Yol arkadaşlığını sonlandırmak üzeresin!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Evet, çıkar!',
+        cancelButtonText: 'Vazgeç',
+        background: '#fff',
+        borderRadius: '1.25rem',
+        customClass: {
+            title: 'fw-bold',
+            confirmButton: 'rounded-pill px-4',
+            cancelButton: 'rounded-pill px-4'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = removeUrl;
+        }
+    })
 }
 </script>
 
-{% endblock %} 
+{% endblock %}
