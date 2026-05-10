@@ -129,6 +129,15 @@ def reject_friend_request(request, notification_id):
         return redirect('community:community_home')
 
 # Bir sonraki fonksiyonun başladığı yer...
+@login_required
+def remove_friend(request, user_id):
+    target_user = get_object_or_404(User, id=user_id)
+    # Arkadaşlık ilişkisini her iki yönden de siliyoruz
+    Friendship.objects.filter(
+        Q(from_user=request.user, to_user=target_user) | 
+        Q(from_user=target_user, to_user=request.user)
+    ).delete()
+    return redirect('community:user_profile', username=target_user.username)
 
 @login_required
 def post_detail(request, post_id):
