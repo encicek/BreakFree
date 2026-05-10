@@ -111,6 +111,22 @@ def accept_friend_request(request, notification_id):
     try: return redirect('community:notifications')
     except: return redirect('community:community_home')
 
+    @login_required
+def reject_friend_request(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    # Arkadaşlık isteğini siliyoruz
+    Friendship.objects.filter(
+        from_user=notification.sender, 
+        to_user=request.user, 
+        status='pending'
+    ).delete()
+    # Bildirimi siliyoruz
+    notification.delete()
+    try:
+        return redirect('community:notifications')
+    except:
+        return redirect('community:community_home')
+
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
