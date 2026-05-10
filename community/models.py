@@ -59,59 +59,8 @@ class Post(models.Model):
         return self.title
 
     # 🚨 GÜNCELLENDİ: Hata Toleranslı Kaydetme Mantığı
-    def save(self, *args, **kwargs):
-        # Yeni bir post mu kontrolü
-        is_new = self._state.adding
-        
-        # Moderasyon Filtresi
-        forbidden_words = [
-            'küfür1', 'hakaret1', 'gerizekalı', 'aptal', 'salak', 'ezik',
-            'satılık', 'fiyat', 'tıkla', 'kazan', 'link.com', 'ucretsiz',
-            'torbacı', 'satış', 'öldür', 'geber', 'nefret', 'taciz'
-        ]
-        
-        content_lower = self.content.lower()
-        found_forbidden = False
-        
-        for word in forbidden_words:
-            if word in content_lower:
-                found_forbidden = True
-                # Kolon mevcutsa yayından kaldır
-                if hasattr(self, 'is_published'):
-                    self.is_published = False
-                break
-        
-        # ANA KAYIT İŞLEMİ (Veritabanı kolon hatasına karşı korumalı)
-        try:
-            super().save(*args, **kwargs)
-        except Exception as e:
-            # Eğer 'is_published' kolonu yoksa, onu dışarıda bırakıp tekrar dene
-            if 'is_published' in str(e):
-                valid_fields = [f.name for f in self._meta.fields if f.name != 'is_published' and f.name != 'report_count']
-                super().save(update_fields=valid_fields)
-            else:
-                raise e # Başka bir hata varsa fırlat
-        
-        # Otomatik Raporlama ve Şikayet Sayacı
-        if found_forbidden and is_new:
-            admin_user = User.objects.filter(is_superuser=True).first()
-            
-            # Rapor kaydı (Bu tablo zaten var olduğu için güvenli)
-            Report.objects.create(
-                reporter=admin_user if admin_user else self.user,
-                post=self,
-                reason='inappropriate',
-                description=f"Otomatik Filtre: İçerik gizlendi. Yasaklı kelime tespit edildi."
-            )
-            
-            # Şikayet sayısını sadece kolon varsa ve güvenliyse güncelle
-            if hasattr(self, 'report_count'):
-                self.report_count += 1
-                try:
-                    # Sadece report_count'u güncellemeyi dene
-                    Post.objects.filter(pk=self.pk).update(report_count=self.report_count)
-                except:
-                    pass
+def save(self, *args, **kwargs):
+    super().save(*args, **kwargs)
 
 # --- YORUM MODELİ ---
 class Comment(models.Model):
