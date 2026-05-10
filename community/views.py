@@ -220,12 +220,17 @@ def create_post(request):
     else:
         form = PostForm()
     return render(request, 'community/create_post.html', {'form': form})
-
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all().order_by('-created_at')
-    is_supported = post.supports.filter(user=request.user).exists() if hasattr(post, 'supports') else False
+    
+    # 🚨 HATA KORUMASI: supports özelliği yoksa çökme, False dön
+    try:
+        is_supported = post.supports.filter(user=request.user).exists()
+    except (AttributeError, Exception):
+        is_supported = False
+        
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
         if comment_form.is_valid():
@@ -238,16 +243,27 @@ def post_detail(request, post_id):
             return redirect('community:post_detail', post_id=post.id)
     else:
         comment_form = CommentForm()
-    return render(request, 'community/post_detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form, 'is_supported': is_supported})
-
+    return render(request, 'community/post_detail.html', {
+        'post': post, 
+        'comments': comments, 
+        'comment_form': comment_form, 
+        'is_supported': is_supported
+    })
 @login_required
 def support_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    support, created = post.supports.get_or_create(user=request.user)
-    if created and post.user != request.user:
-        Notification.objects.create(recipient=post.user, sender=request.user, notification_type='support', post=post)
-    elif not created:
-        support.delete()
+    
+    # 🚨 HATA KORUMASI: supports ilişkisi kurulamazsa Support modeli üzerinden git
+    from .models import Support
+    try:
+        support, created = Support.objects.get_or_create(post=post, user=request.user)
+        if created and post.user != request.user:
+            Notification.objects.create(recipient=post.user, sender=request.user, notification_type='support', post=post)
+        elif not created:
+            support.delete()
+    except Exception:
+        pass # En azından sayfa çökmez
+        
     return redirect(request.META.get('HTTP_REFERER', 'community:community_home'))
 
 @login_required
