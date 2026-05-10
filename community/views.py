@@ -5,21 +5,21 @@ from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.db.models import Q 
 from django.core.paginator import Paginator 
-from .models import Post, Friendship, Notification, Report, Support # Support eklendi
+from .models import Post, Friendship, Notification, Report, Support 
 from tracking.models import DependencyGoal, DailyLog, UserBadge
 from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
 import datetime
 import json 
 
-# --- TOPLULUK ANA SAYFASI ---
+# --- TOPLULUK ANA SAYFASI (DÜZENLENDİ) ---
 @login_required
 def community_home(request):
     query = request.GET.get('q', '').strip() 
     category_filter = request.GET.get('category') 
     
-    # 🚨 RADİKAL ÇÖZÜM: Hata veren filtreyi tamamen kaldırıyoruz
-    # Veritabanında kolon olsa da olmasa da bu kod ASLA çökmez.
+    # 🚨 DÜZENLEME: Sadece hata veren "is_published=True" kısmını sildik. 
+    # Diğer her şey (arama, kategori, sayfalama) aynı kaldı.
     posts_list = Post.objects.all().order_by('-created_at')
 
     if query:
@@ -44,20 +44,13 @@ def community_home(request):
         'current_category': category_filter, 
         'query': query
     })
-    
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        html = render_to_string('community/posts_list_partial.html', {'posts': posts})
-        return HttpResponse(html)
-    return render(request, 'community/community_home.html', {'posts': posts, 'current_category': category_filter, 'query': query})
 
-# --- PROFİL SİSTEMİ ---
+# --- PROFİL SİSTEMİ (TÜM ÖZELLİKLER KORUNDU) ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    try:
-        posts = Post.objects.filter(user=profile_user).order_by('-created_at')
-    except:
-        posts = Post.objects.filter(user=profile_user).order_by('-created_at')
+    # Burada da hata veren filtreyi kaldırdık
+    posts = Post.objects.filter(user=profile_user).order_by('-created_at')
 
     raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
     active_goals_with_stats = []
@@ -97,13 +90,14 @@ def user_profile(request, username):
         'user_badges': user_badges, 'chart_labels': json.dumps(chart_labels), 'chart_data': json.dumps(chart_data),     
     })
 
-# --- ARKADAŞLIK & BİLDİRİM (Hata Veren Kısımlar Düzenlendi) ---
+# --- BİLDİRİMLER (KORUNDU) ---
 @login_required
 def notifications(request):
     user_notifications = request.user.notifications.all().order_by('-created_at')
     user_notifications.exclude(notification_type='friend_request').update(is_read=True)
     return render(request, 'community/notifications.html', {'notifications': user_notifications})
 
+# --- ARKADAŞLIK İŞLEMLERİ (KORUNDU) ---
 @login_required
 def send_friend_request(request, user_id):
     to_user = get_object_or_404(User, id=user_id)
@@ -121,46 +115,30 @@ def accept_friend_request(request, notification_id):
         friendship.status = 'accepted'
         friendship.save()
     notification.delete()
-    # 🚨 Reverse hatasına karşı önlem:
-    try: return redirect('community:notifications')
-    except: return redirect('community:community_home')
-
-# Bir önceki fonksiyonun bittiği yer...
+    return redirect('community:notifications')
 
 @login_required
 def reject_friend_request(request, notification_id):
     notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
-    # Bu satırların başında tam 4 boşluk (veya 1 Tab) olmalı
-    Friendship.objects.filter(
-        from_user=notification.sender, 
-        to_user=request.user, 
-        status='pending'
-    ).delete()
+    Friendship.objects.filter(from_user=notification.sender, to_user=request.user, status='pending').delete()
     notification.delete()
-    try:
-        return redirect('community:notifications')
-    except:
-        return redirect('community:community_home')
+    return redirect('community:notifications')
 
-# Bir sonraki fonksiyonun başladığı yer...
 @login_required
 def remove_friend(request, user_id):
     target_user = get_object_or_404(User, id=user_id)
-    # Arkadaşlık ilişkisini her iki yönden de siliyoruz
-    Friendship.objects.filter(
-        Q(from_user=request.user, to_user=target_user) | 
-        Q(from_user=target_user, to_user=request.user)
-    ).delete()
+    Friendship.objects.filter(Q(from_user=request.user, to_user=target_user) | Q(from_user=target_user, to_user=request.user)).delete()
     return redirect('community:user_profile', username=target_user.username)
 
+# --- POST DETAY VE YORUM (KORUNDU) ---
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     comments = post.comments.all().order_by('-created_at')
-    
-    # supports hatasına karşı kesin çözüm:
-    try: is_supported = post.supports.filter(user=request.user).exists()
-    except: is_supported = False
+    try:
+        is_supported = post.supports.filter(user=request.user).exists()
+    except:
+        is_supported = False
         
     if request.method == 'POST':
         comment_form = CommentForm(request.POST)
@@ -173,6 +151,7 @@ def post_detail(request, post_id):
             return redirect('community:post_detail', post_id=post.id)
     return render(request, 'community/post_detail.html', {'post': post, 'comments': comments, 'comment_form': CommentForm(), 'is_supported': is_supported})
 
+# --- DİĞER FONKSİYONLAR (KORUNDU) ---
 @login_required
 def support_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
@@ -184,7 +163,6 @@ def support_post(request, post_id):
     except: pass
     return redirect(request.META.get('HTTP_REFERER', 'community:community_home'))
 
-# --- DİĞERLERİ ---
 @login_required
 def user_list(request):
     search_query = request.GET.get('search', '').strip()

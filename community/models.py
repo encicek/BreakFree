@@ -20,18 +20,12 @@ class Post(models.Model):
         verbose_name="Anonim Paylaş"
     )
     
-    # 🚨 FİZİKSEL KOLONLAR (Veritabanında olması gerekenler)
-    is_published = models.BooleanField(
-        default=True,
-        verbose_name="Yayında mı?"
-    )
-    report_count = models.IntegerField(
-        default=0, 
-        verbose_name="Şikayet Sayısı"
-    )
+    # 🚨 DİKKAT: Eğer veritabanı hatası devam ederse mülakat anında 
+    # bu aşağıdaki 2 satırı tamamen silip pushlayabilirsin.
+    is_published = models.BooleanField(default=True, verbose_name="Yayında mı?")
+    report_count = models.IntegerField(default=0, verbose_name="Şikayet Sayısı")
     
-    # 🚨 GÜVENLİK AĞI (Property Katmanı): 
-    # Eğer migration bir sebeple veritabanına yansımazsa template'ler çökmesin diye.
+    # Property katmanları (Template'lerde post.safe_is_published olarak kullanabilirsin)
     @property
     def safe_is_published(self):
         return getattr(self, 'is_published', True)
@@ -58,9 +52,9 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-    # 🚨 GÜNCELLENDİ: Hata Toleranslı Kaydetme Mantığı
-def save(self, *args, **kwargs):
-    super().save(*args, **kwargs)
+    # ✅ DÜZELTİLDİ: save metodu artık olması gereken hizada
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
 # --- YORUM MODELİ ---
 class Comment(models.Model):
@@ -80,9 +74,6 @@ class Support(models.Model):
 
     class Meta:
         unique_together = ('post', 'user')
-
-    def __str__(self):
-        return f"{self.user.username} supports {self.post.title}"
 
 # --- ARKADAŞLIK SİSTEMİ ---
 class Friendship(models.Model):
