@@ -20,20 +20,25 @@ class Post(models.Model):
         verbose_name="Anonim Paylaş"
     )
     
-    # 🚨 GÜVENLİ HALE GETİRİLDİ: 
-    # Eğer veritabanında kolon yoksa hata vermemesi için property olarak tanımlıyoruz.
-    # Eğer migration başarılı olursa bu property'ler gerçek kolonların değerini döndürür.
+    # 🚨 FİZİKSEL KOLONLAR (Veritabanında olması gerekenler)
+    is_published = models.BooleanField(
+        default=True,
+        verbose_name="Yayında mı?"
+    )
+    report_count = models.IntegerField(
+        default=0, 
+        verbose_name="Şikayet Sayısı"
+    )
+    
+    # 🚨 GÜVENLİK AĞI (Property Katmanı): 
+    # Eğer migration bir sebeple veritabanına yansımazsa template'ler çökmesin diye.
     @property
-    def is_published_status(self):
+    def safe_is_published(self):
         return getattr(self, 'is_published', True)
 
     @property
-    def report_count_display(self):
+    def safe_report_count(self):
         return getattr(self, 'report_count', 0)
-
-    # Fiziksel kolonlar (Migration için burada durmalı)
-    is_published = models.BooleanField(default=True, verbose_name="Yayında mı?")
-    report_count = models.IntegerField(default=0, verbose_name="Şikayet Sayısı")
     
     addiction_type = models.CharField(
         max_length=20,
@@ -53,10 +58,12 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-    # 🚨 GÜNCELLENDİ: Hata Almayan Filtreleme Mantığı
+    # 🚨 GÜNCELLENDİ: Hata Toleranslı Kaydetme Mantığı
     def save(self, *args, **kwargs):
+        # Yeni bir post mu kontrolü
         is_new = self._state.adding
         
+        # Moderasyon Filtresi
         forbidden_words = [
             'küfür1', 'hakaret1', 'gerizekalı', 'aptal', 'salak', 'ezik',
             'satılık', 'fiyat', 'tıkla', 'kazan', 'link.com', 'ucretsiz',
@@ -69,27 +76,27 @@ class Post(models.Model):
         for word in forbidden_words:
             if word in content_lower:
                 found_forbidden = True
-                # Kolon veritabanında varsa değerini değiştirir
+                # Kolon mevcutsa yayından kaldır
                 if hasattr(self, 'is_published'):
                     self.is_published = False
                 break
         
-        # Kaydetme işlemini hata blokları içinde yapıyoruz
+        # ANA KAYIT İŞLEMİ (Veritabanı kolon hatasına karşı korumalı)
         try:
             super().save(*args, **kwargs)
-        except Exception:
-            # Eğer is_published kolonu yüzünden patlarsa, o kolonu güncelleyemeden kaydetmeyi dene
-            if 'is_published' in str(Exception):
-                # Bu kısım çok ileri düzey bir 'fail-safe' mekanizmasıdır
-                kwargs['update_fields'] = [f.name for f in self._meta.fields if f.name != 'is_published']
-                super().save(*args, **kwargs)
+        except Exception as e:
+            # Eğer 'is_published' kolonu yoksa, onu dışarıda bırakıp tekrar dene
+            if 'is_published' in str(e):
+                valid_fields = [f.name for f in self._meta.fields if f.name != 'is_published' and f.name != 'report_count']
+                super().save(update_fields=valid_fields)
             else:
-                super().save(*args, **kwargs)
+                raise e # Başka bir hata varsa fırlat
         
+        # Otomatik Raporlama ve Şikayet Sayacı
         if found_forbidden and is_new:
             admin_user = User.objects.filter(is_superuser=True).first()
             
-            # Raporu oluştur (Bu tablo zaten var olduğu için hata vermez)
+            # Rapor kaydı (Bu tablo zaten var olduğu için güvenli)
             Report.objects.create(
                 reporter=admin_user if admin_user else self.user,
                 post=self,
@@ -97,12 +104,13 @@ class Post(models.Model):
                 description=f"Otomatik Filtre: İçerik gizlendi. Yasaklı kelime tespit edildi."
             )
             
-            # Şikayet sayısını sadece kolon varsa güncelle
+            # Şikayet sayısını sadece kolon varsa ve güvenliyse güncelle
             if hasattr(self, 'report_count'):
                 self.report_count += 1
                 try:
-                    super().save(update_fields=['report_count'])
-                except Exception:
+                    # Sadece report_count'u güncellemeyi dene
+                    Post.objects.filter(pk=self.pk).update(report_count=self.report_count)
+                except:
                     pass
 
 # --- YORUM MODELİ ---

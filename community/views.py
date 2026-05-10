@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.db.models import Q 
 from django.core.paginator import Paginator 
 from .models import Post, Friendship, Notification, Report 
-from tracking.models import DependencyGoal, DailyLog, UserBadge  # UserBadge eklendi
+from tracking.models import DependencyGoal, DailyLog, UserBadge
 from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
 import datetime
@@ -17,23 +17,48 @@ import json
 def community_home(request):
     query = request.GET.get('q', '').strip() 
     category_filter = request.GET.get('category') 
-    posts_list = Post.objects.all().order_by('-created_at')
+    
+    # 🚨 GÜVENLİ FİLTRELEME:
+    # Eğer veritabanında is_published kolonu varsa sadece yayındakileri getir, 
+    # yoksa (hata almamak için) hepsini getir.
+    try:
+        posts_list = Post.objects.filter(is_published=True).order_by('-created_at')
+    except:
+        posts_list = Post.objects.all().order_by('-created_at')
+
     if query:
-        posts_list = posts_list.filter(Q(title__icontains=query) | Q(content__icontains=query) | Q(user__username__icontains=query))
+        posts_list = posts_list.filter(
+            Q(title__icontains=query) | 
+            Q(content__icontains=query) | 
+            Q(user__username__icontains=query)
+        )
+    
     if category_filter and category_filter != 'all':
         posts_list = posts_list.filter(addiction_type=category_filter)
+    
     paginator = Paginator(posts_list, 10) 
     posts = paginator.get_page(request.GET.get('page'))
+    
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('community/posts_list_partial.html', {'posts': posts})
         return HttpResponse(html)
-    return render(request, 'community/community_home.html', {'posts': posts, 'current_category': category_filter, 'query': query})
+        
+    return render(request, 'community/community_home.html', {
+        'posts': posts, 
+        'current_category': category_filter, 
+        'query': query
+    })
 
-# --- PROFİL SİSTEMİ (Rozet Desteği Eklendi) ---
+# --- PROFİL SİSTEMİ ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(user=profile_user).order_by('-created_at')
+    
+    # Profilde de is_published filtresini güvenli yapıyoruz
+    try:
+        posts = Post.objects.filter(user=profile_user, is_published=True).order_by('-created_at')
+    except:
+        posts = Post.objects.filter(user=profile_user).order_by('-created_at')
 
     # Hedef İstatistiklerini Hesapla
     raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
@@ -75,8 +100,7 @@ def user_profile(request, username):
     
     friend_list = list(friends_set)
 
-    # --- ROZET VERİLERİ (DÜZELTME) ---
-    # Kullanıcının kazandığı rozetleri tarih sırasına göre çekiyoruz
+    # Rozet Verileri
     user_badges = UserBadge.objects.filter(user=profile_user).select_related('badge').order_by('earned_at')
 
     # GRAFİK VERİSİ
@@ -105,7 +129,7 @@ def user_profile(request, username):
         'friend_list': friend_list,
         'friend_activities': friend_activities,
         'recent_logs': recent_logs,
-        'user_badges': user_badges,  # Context'e eklendi
+        'user_badges': user_badges,
         'chart_labels': json.dumps(chart_labels), 
         'chart_data': json.dumps(chart_data),     
     })
@@ -165,8 +189,6 @@ def notifications(request):
 @login_required
 def user_list(request):
     search_query = request.GET.get('search', '').strip()
-    
-    # Zaten arkadaş olanları hariç tutmak için mevcut mantık
     friends_relations = Friendship.objects.filter(
         Q(from_user=request.user) | Q(to_user=request.user)
     ).values_list('from_user_id', 'to_user_id', flat=False)
@@ -176,8 +198,6 @@ def user_list(request):
         exclude_ids.add(f_id)
         exclude_ids.add(t_id)
 
-    # --- KRİTİK GÜNCELLEME BURASI ---
-    # is_superuser=False ekleyerek adminleri listeden tamamen çıkartıyoruz
     users_queryset = User.objects.filter(is_superuser=False).exclude(id__in=exclude_ids)
     
     if search_query:
