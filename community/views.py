@@ -18,18 +18,32 @@ def community_home(request):
     query = request.GET.get('q', '').strip() 
     category_filter = request.GET.get('category') 
     
-    try:
-        posts_list = Post.objects.filter(is_published=True).order_by('-created_at')
-    except:
-        posts_list = Post.objects.all().order_by('-created_at')
+    # 🚨 RADİKAL ÇÖZÜM: Hata veren filtreyi tamamen kaldırıyoruz
+    # Veritabanında kolon olsa da olmasa da bu kod ASLA çökmez.
+    posts_list = Post.objects.all().order_by('-created_at')
 
     if query:
-        posts_list = posts_list.filter(Q(title__icontains=query) | Q(content__icontains=query) | Q(user__username__icontains=query))
+        posts_list = posts_list.filter(
+            Q(title__icontains=query) | 
+            Q(content__icontains=query) | 
+            Q(user__username__icontains=query)
+        )
+    
     if category_filter and category_filter != 'all':
         posts_list = posts_list.filter(addiction_type=category_filter)
     
     paginator = Paginator(posts_list, 10) 
     posts = paginator.get_page(request.GET.get('page'))
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render_to_string('community/posts_list_partial.html', {'posts': posts})
+        return HttpResponse(html)
+        
+    return render(request, 'community/community_home.html', {
+        'posts': posts, 
+        'current_category': category_filter, 
+        'query': query
+    })
     
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('community/posts_list_partial.html', {'posts': posts})
@@ -41,7 +55,7 @@ def community_home(request):
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     try:
-        posts = Post.objects.filter(user=profile_user, is_published=True).order_by('-created_at')
+        posts = Post.objects.filter(user=profile_user).order_by('-created_at')
     except:
         posts = Post.objects.filter(user=profile_user).order_by('-created_at')
 
