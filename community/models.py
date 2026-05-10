@@ -22,17 +22,17 @@ class Post(models.Model):
     
     # 🚨 DİKKAT: Eğer veritabanı hatası devam ederse mülakat anında 
     # bu aşağıdaki 2 satırı tamamen silip pushlayabilirsin.
-    is_published = models.BooleanField(default=True, verbose_name="Yayında mı?")
-    report_count = models.IntegerField(default=0, verbose_name="Şikayet Sayısı")
+   # is_published = models.BooleanField(default=True, verbose_name="Yayında mı?")
+    #report_count = models.IntegerField(default=0, verbose_name="Şikayet Sayısı")
     
     # Property katmanları (Template'lerde post.safe_is_published olarak kullanabilirsin)
-    @property
-    def safe_is_published(self):
-        return getattr(self, 'is_published', True)
+    #@property
+    #def safe_is_published(self):
+     #   return getattr(self, 'is_published', True)
 
-    @property
-    def safe_report_count(self):
-        return getattr(self, 'report_count', 0)
+    #@property
+    #def safe_report_count(self):
+     #   return getattr(self, 'report_count', 0)
     
     addiction_type = models.CharField(
         max_length=20,
