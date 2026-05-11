@@ -5,18 +5,38 @@ from django.contrib import messages
 from django.db.models import Q, Count
 from tracking.models import DependencyGoal
 from community.models import Post
+import json # Grafik verilerini JSON formatına çevirmek için
 
 # --- 1. ANA PANEL (DASHBOARD) ---
 @staff_member_required(login_url='/gizli-admin/login/') 
 def dashboard(request):
+    # Temel Sayılar
     total_users = User.objects.count()
     total_goals = DependencyGoal.objects.count()
     total_posts = Post.objects.count()
+
+    # --- ANALİZ 1: GRAFİK VERİSİ (Bağımlılık Dağılımı) ---
+    goal_stats = DependencyGoal.objects.values('dependency_type').annotate(total=Count('id'))
+    
+    # JavaScript'in anlayacağı formata (JSON) çeviriyoruz
+    # Grafik etiketleri ve değerleri
+    chart_labels = [item['dependency_type'].capitalize() for item in goal_stats]
+    chart_data = [item['total'] for item in goal_stats]
+
+    # --- ANALİZ 2: SON AKTİVİTELER ---
+    # En son kayıt olan 3 kullanıcı
+    recent_users = User.objects.all().order_by('-date_joined')[:3]
+    # En son açılan 3 hedef
+    recent_goals = DependencyGoal.objects.select_related('user').order_by('-start_date')[:3]
 
     context = {
         'total_users': total_users,
         'total_goals': total_goals,
         'total_posts': total_posts,
+        'chart_labels': json.dumps(chart_labels), # JSON formatında gönderiyoruz
+        'chart_data': json.dumps(chart_data),
+        'recent_users': recent_users,
+        'recent_goals': recent_goals,
     }
     return render(request, 'yonetim/dashboard.html', context)
 
@@ -69,8 +89,6 @@ def goal_list(request):
 # --- 4. TOPLULUK MODERASYONU (ŞİKAYET ODAKLI) ---
 @staff_member_required(login_url='/gizli-admin/login/')
 def post_list(request):
-    # Şikayet sayısına göre büyükten küçüğe sırala (En sorunlular en üstte)
-    # annotate ile her postun 'reports' ilişkisindeki kayıtlarını sayıyoruz
     posts = Post.objects.annotate(
         report_count=Count('reports')
     ).select_related('user').prefetch_related('reports').order_by('-report_count', '-created_at')
