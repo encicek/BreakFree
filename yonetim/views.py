@@ -2,8 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q, Count, Avg # 🚨 Avg ortalama hesaplamak için eklendi
-from tracking.models import DependencyGoal, DailyLog # 🚨 DailyLog eklendi
+from django.db.models import Q, Count, Avg
+from tracking.models import DependencyGoal, DailyLog
 from community.models import Post
 import json
 
@@ -14,12 +14,10 @@ def dashboard(request):
     total_goals = DependencyGoal.objects.count()
     total_posts = Post.objects.count()
 
-    # GRAFİK VERİSİ
     goal_stats = DependencyGoal.objects.values('dependency_type').annotate(total=Count('id'))
     chart_labels = [item['dependency_type'].capitalize() for item in goal_stats]
     chart_data = [item['total'] for item in goal_stats]
 
-    # SON AKTİVİTELER
     recent_users = User.objects.all().order_by('-date_joined')[:3]
     recent_goals = DependencyGoal.objects.select_related('user').order_by('-start_date')[:3]
 
@@ -96,23 +94,38 @@ def post_delete(request, pk):
     messages.success(request, f'"{title}" başlıklı gönderi moderasyon gereği silindi.')
     return redirect('yonetim:post_list')
 
-# --- 5. 🚨 YENİ: BAŞARI VE LOG ANALİZİ ---
+# --- 5. 🚨 GÜNCELLENDİ: AKILLI BAŞARI TAKİBİ (GRUPAL VE DETAYLI) ---
 @staff_member_required(login_url='/gizli-admin/login/')
 def success_tracking(request):
-    # Son giren 20 günlük raporu çekiyoruz
-    recent_logs = DailyLog.objects.select_related('goal__user').order_by('-date')[:20]
-    
-    # İstatistikler
-    total_logs = DailyLog.objects.count()
-    relapse_count = DailyLog.objects.filter(relapse=True).count()
-    
-    # Ortalama zorlanma seviyesi hesaplama
-    avg_craving = DailyLog.objects.aggregate(Avg('craving_level'))['craving_level__avg']
+    user_id = request.GET.get('user_id')
+    query = request.GET.get('q', '')
 
-    context = {
-        'recent_logs': recent_logs,
-        'relapse_count': relapse_count,
-        'total_logs': total_logs,
-        'avg_craving': round(avg_craving, 1) if avg_craving else 0
-    }
+    if user_id:
+        # SENARYO A: Sadece tek bir kullanıcının geçmişini gör
+        selected_user = get_object_or_404(User, pk=user_id)
+        logs = DailyLog.objects.filter(goal__user=selected_user).order_by('-date')
+        context = {
+            'mode': 'detail',
+            'selected_user': selected_user,
+            'logs': logs
+        }
+    else:
+        # SENARYO B: Genel özet listesi (Arama destekli)
+        # Sadece hedefi ve günlüğü olan kullanıcıları, başarı istatistikleriyle getir
+        user_summaries = User.objects.annotate(
+            log_count=Count('goals__logs'),
+            avg_craving=Avg('goals__logs__craving_level'),
+            relapse_total=Count('goals__logs', filter=Q(goals__logs__relapse=True))
+        ).filter(log_count__gt=0).order_by('-log_count')
+
+        if query:
+            user_summaries = user_summaries.filter(username__icontains=query)
+
+        context = {
+            'mode': 'summary',
+            'user_summaries': user_summaries,
+            'query': query,
+            'total_system_logs': DailyLog.objects.count()
+        }
+    
     return render(request, 'yonetim/success_tracking.html', context)

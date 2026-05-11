@@ -2,70 +2,75 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Başarı Takibi - Yönetim</title>
+    <title>Başarı Analiz Merkezi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 </head>
 <body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark py-3 mb-5">
+    <nav class="navbar navbar-dark bg-dark py-3 mb-4">
         <div class="container px-4">
-            <a class="navbar-brand fw-bold" href="{% url 'yonetim:dashboard' %}">BreakFree ANALİZ</a>
+            <a class="navbar-brand fw-bold" href="{% url 'yonetim:success_tracking' %}">SİSTEM ANALİZ MERKEZİ</a>
             <a href="{% url 'yonetim:dashboard' %}" class="btn btn-sm btn-outline-light rounded-pill">Panele Dön</a>
         </div>
     </nav>
 
     <div class="container">
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
-                    <h6 class="text-muted text-uppercase small fw-bold">Sistem Genel Zorlanma Ortalaması</h6>
-                    <h2 class="fw-bold text-primary mb-0">{{ avg_craving }} / 10</h2>
-                </div>
+        {% if mode == 'summary' %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-secondary">Kullanıcı Başarı Özetleri</h3>
+                <form method="GET" class="d-flex w-25">
+                    <input type="text" name="q" class="form-control rounded-pill shadow-sm" placeholder="Kullanıcı ara..." value="{{ query }}">
+                </form>
             </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white text-center">
-                    <h6 class="text-muted text-uppercase small fw-bold">Toplam Kural Bozma (Relapse)</h6>
-                    <h2 class="fw-bold text-danger mb-0">{{ relapse_count }} / {{ total_logs }}</h2>
-                </div>
-            </div>
-        </div>
 
-        <h4 class="fw-bold mb-4">Son Kullanıcı Raporları</h4>
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="px-4">Kullanıcı</th>
-                        <th>Tarih</th>
-                        <th>İstek Seviyesi</th>
-                        <th>Relapse?</th>
-                        <th>Tetikleyici</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in recent_logs %}
-                    <tr>
-                        <td class="px-4 fw-bold">{{ log.goal.user.username }}</td>
-                        <td class="small">{{ log.date|date:"d M Y" }}</td>
-                        <td>
-                            <div class="progress" style="height: 10px; width: 100px;">
-                                <div class="progress-bar {% if log.craving_level > 7 %}bg-danger{% else %}bg-success{% endif %}" 
-                                     style="width: {{ log.craving_level }}0%"></div>
-                            </div>
-                        </td>
-                        <td>
-                            {% if log.relapse %}
-                                <span class="badge bg-danger">EVET</span>
-                            {% else %}
-                                <span class="badge bg-success">HAYIR</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-muted small">{{ log.trigger|default:"-" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            <div class="row g-3">
+                {% for u in user_summaries %}
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-3">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="fw-bold">{{ u.username }}</h5>
+                            <span class="badge bg-primary rounded-pill">{{ u.log_count }} Kayıt</span>
+                        </div>
+                        <p class="small text-muted mb-2">Ortalama İstek: {{ u.avg_craving|floatformat:1 }} / 10</p>
+                        <a href="?user_id={{ u.id }}" class="btn btn-sm btn-outline-primary w-100 rounded-pill">Tüm Girdileri Gör</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <div class="mb-4">
+                <a href="{% url 'yonetim:success_tracking' %}" class="text-decoration-none small text-primary"><i class="bi bi-arrow-left"></i> Listeye Dön</a>
+                <h3 class="fw-bold mt-2">{{ selected_user.username }} - Tüm Rapor Geçmişi</h3>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4">Tarih</th>
+                            <th>İstek</th>
+                            <th>Relapse?</th>
+                            <th>Tetikleyici / Not</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="px-4">{{ log.date|date:"d M Y" }}</td>
+                            <td>
+                                <div class="progress" style="height: 8px; width: 80px;">
+                                    <div class="progress-bar {% if log.craving_level > 7 %}bg-danger{% else %}bg-success{% endif %}" style="width: {{ log.craving_level }}0%"></div>
+                                </div>
+                            </td>
+                            <td>{% if log.relapse %}<span class="badge bg-danger">EVET</span>{% else %}<span class="badge bg-success">HAYIR</span>{% endif %}</td>
+                            <td class="small text-muted">{{ log.trigger|default:"-" }} / {{ log.daily_note|truncatechars:30 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
     </div>
 </body>
 </html>
