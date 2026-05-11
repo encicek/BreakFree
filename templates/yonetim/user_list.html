@@ -62,12 +62,12 @@
                     <thead class="table-light text-muted small">
                         <tr>
                             <th class="py-3 px-4">KULLANICI ADI</th>
-                            <th class="py-3">E-POSTA</th>
                             <th class="py-3">HEDEFLER</th> 
                             <th class="py-3">ROZETLER</th> 
                             <th class="py-3">KAYIT TARİHİ</th>
                             <th class="py-3 text-center">DURUM</th>
-                            <th class="py-3 text-center">İŞLEM</th> </tr>
+                            <th class="py-3 text-center">İŞLEM</th> 
+                        </tr>
                     </thead>
                     <tbody>
                         {% for u in users %}
@@ -76,7 +76,6 @@
                                 <div class="fw-bold text-dark">{{ u.username }}</div>
                                 <small class="text-secondary text-uppercase" style="font-size: 0.7rem;">ID: #{{ u.id }}</small>
                             </td>
-                            <td>{{ u.email|default:"<span class='text-muted fst-italic'>Belirtilmemiş</span>"|safe }}</td>
                             
                             <td>
                                 <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-3">
@@ -118,7 +117,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
+                            <td colspan="6" class="text-center py-5 text-muted">
                                 <i class="bi bi-search display-4 d-block mb-3 opacity-25"></i>
                                 Aradığınız kriterlere uygun kullanıcı bulunamadı.
                             </td>
@@ -143,10 +142,6 @@
               <div class="mb-3">
                 <label class="form-label small fw-bold text-secondary">Kullanıcı Adı</label>
                 <input type="text" name="username" class="form-control rounded-3 bg-light border-0" placeholder="Örn: yenikullanici" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label small fw-bold text-secondary">E-Posta</label>
-                <input type="email" name="email" class="form-control rounded-3 bg-light border-0" placeholder="Örn: eposta@adres.com">
               </div>
               <div class="mb-4">
                 <label class="form-label small fw-bold text-secondary">Başlangıç Şifresi</label>
