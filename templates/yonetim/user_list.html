@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcı Listesi - Yönetim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .admin-navbar { background-color: #212529; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark admin-navbar shadow-sm py-3">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold" href="{% url 'yonetim:dashboard' %}">
+                <i class="bi bi-shield-lock-fill text-success me-2"></i>BreakFree YÖNETİM
+            </a>
+            <div class="d-flex align-items-center">
+                <a href="{% url 'yonetim:dashboard' %}" class="btn btn-sm btn-outline-light rounded-pill px-3 me-2">
+                    <i class="bi bi-arrow-left me-1"></i> Panele Dön
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-secondary mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Kullanıcı Listesi</h3>
+            
+            <form method="GET" action="" class="d-flex w-25">
+                <div class="input-group shadow-sm">
+                    <input type="text" name="q" class="form-control" placeholder="Kullanıcı ara..." value="{{ query }}">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small">
+                        <tr>
+                            <th class="py-3 px-4">ID</th>
+                            <th class="py-3">KULLANICI ADI</th>
+                            <th class="py-3">E-POSTA</th>
+                            <th class="py-3">KAYIT TARİHİ</th>
+                            <th class="py-3 text-center">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="px-4 fw-bold text-secondary">#{{ u.id }}</td>
+                            <td class="fw-bold">{{ u.username }}</td>
+                            <td>{{ u.email|default:"<span class='text-muted fst-italic'>Belirtilmemiş</span>"|safe }}</td>
+                            <td>{{ u.date_joined|date:"d M Y, H:i" }}</td>
+                            <td class="text-center">
+                                {% if u.is_staff %}
+                                    <span class="badge bg-danger rounded-pill px-3">Yönetici</span>
+                                {% elif u.is_active %}
+                                    <span class="badge bg-success rounded-pill px-3">Aktif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary rounded-pill px-3">Pasif</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-search display-4 d-block mb-3 opacity-25"></i>
+                                Aradığınız kriterlere uygun kullanıcı bulunamadı.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
