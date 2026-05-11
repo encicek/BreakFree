@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     'accounts',
     'community',
     'core',
+
+    'yonetim',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <i class="bi bi-rocket-takeoff-fill display-1 text-success"></i>
+    <h1 class="text-success mt-3">🎉 Tebrikler! Yeni Yönetim Paneline Hoş Geldiniz.</h1>
+    <p class="fs-5 mt-3">Giriş yapan yetkili: <strong class="text-primary">{{ request.user.username }}</strong></p>
+    <p class="text-muted">Burası bizim sıfırdan inşa edeceğimiz, hocanın göreceği yer. Tablolar ve silme butonları buraya gelecek!</p>
+</div>
+{% endblock %}

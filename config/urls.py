@@ -32,6 +32,7 @@ urlpatterns = [
 
     # 2. Uygulama Yolları (Eski kodlarına dokunmadık)
     path('admin/', admin.site.urls),
+    path('yonetim/', include('yonetim.urls')),
     path('tracking/', include('tracking.urls')),
     path('community/', include(('community.urls', 'community'), namespace='community')),
     path('accounts/', include('accounts.urls')), 
