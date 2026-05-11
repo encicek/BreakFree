@@ -1,10 +1,49 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BreakFree Yönetim Paneli</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        body { 
+            background-color: #f4f6f9; /* Arka planı hafif gri yaparak profesyonel bir görünüm verdik */
+        }
+        .admin-navbar { 
+            background-color: #212529; /* Siyahımsı şık bir üst bar */
+        }
+    </style>
+</head>
+<body>
 
-{% block content %}
-<div class="container mt-5 text-center">
-    <i class="bi bi-rocket-takeoff-fill display-1 text-success"></i>
-    <h1 class="text-success mt-3">🎉 Tebrikler! Yeni Yönetim Paneline Hoş Geldiniz.</h1>
-    <p class="fs-5 mt-3">Giriş yapan yetkili: <strong class="text-primary">{{ request.user.username }}</strong></p>
-    <p class="text-muted">Burası bizim sıfırdan inşa edeceğimiz, hocanın göreceği yer. Tablolar ve silme butonları buraya gelecek!</p>
-</div>
-{% endblock %}
+    <nav class="navbar navbar-expand-lg navbar-dark admin-navbar shadow-sm py-3">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-shield-lock-fill text-success me-2"></i>BreakFree YÖNETİM
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <span class="text-light me-4 small">
+                    <i class="bi bi-person-circle me-1"></i> Yetkili: <strong class="text-success">{{ request.user.username }}</strong>
+                </span>
+                <a href="/" class="btn btn-sm btn-outline-light rounded-pill px-3">
+                    <i class="bi bi-arrow-left-circle me-1"></i> Ana Siteye Dön
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="text-center py-5">
+            <i class="bi bi-rocket-takeoff-fill display-1 text-success"></i>
+            <h1 class="text-success mt-3 fw-bold">🎉 Tertemiz Sayfamız Hazır!</h1>
+            <p class="fs-5 mt-3 text-muted">İşte şimdi gerçek bir yönetim paneline benzedi. Eski menüden tamamen kurtulduk.</p>
+        </div>
+        
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
