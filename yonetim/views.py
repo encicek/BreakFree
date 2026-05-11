@@ -2,45 +2,39 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q, Count
-from tracking.models import DependencyGoal
+from django.db.models import Q, Count, Avg # 🚨 Avg ortalama hesaplamak için eklendi
+from tracking.models import DependencyGoal, DailyLog # 🚨 DailyLog eklendi
 from community.models import Post
-import json # Grafik verilerini JSON formatına çevirmek için
+import json
 
 # --- 1. ANA PANEL (DASHBOARD) ---
 @staff_member_required(login_url='/gizli-admin/login/') 
 def dashboard(request):
-    # Temel Sayılar
     total_users = User.objects.count()
     total_goals = DependencyGoal.objects.count()
     total_posts = Post.objects.count()
 
-    # --- ANALİZ 1: GRAFİK VERİSİ (Bağımlılık Dağılımı) ---
+    # GRAFİK VERİSİ
     goal_stats = DependencyGoal.objects.values('dependency_type').annotate(total=Count('id'))
-    
-    # JavaScript'in anlayacağı formata (JSON) çeviriyoruz
-    # Grafik etiketleri ve değerleri
     chart_labels = [item['dependency_type'].capitalize() for item in goal_stats]
     chart_data = [item['total'] for item in goal_stats]
 
-    # --- ANALİZ 2: SON AKTİVİTELER ---
-    # En son kayıt olan 3 kullanıcı
+    # SON AKTİVİTELER
     recent_users = User.objects.all().order_by('-date_joined')[:3]
-    # En son açılan 3 hedef
     recent_goals = DependencyGoal.objects.select_related('user').order_by('-start_date')[:3]
 
     context = {
         'total_users': total_users,
         'total_goals': total_goals,
         'total_posts': total_posts,
-        'chart_labels': json.dumps(chart_labels), # JSON formatında gönderiyoruz
+        'chart_labels': json.dumps(chart_labels),
         'chart_data': json.dumps(chart_data),
         'recent_users': recent_users,
         'recent_goals': recent_goals,
     }
     return render(request, 'yonetim/dashboard.html', context)
 
-# --- 2. KULLANICI YÖNETİMİ (LİSTELEME, EKLEME, SİLME) ---
+# --- 2. KULLANICI YÖNETİMİ ---
 @staff_member_required(login_url='/gizli-admin/login/') 
 def user_list(request):
     query = request.GET.get('q', '') 
@@ -50,7 +44,6 @@ def user_list(request):
         ).prefetch_related('earned_badges__badge', 'goals').order_by('-date_joined')
     else:
         users = User.objects.all().prefetch_related('earned_badges__badge', 'goals').order_by('-date_joined')
-
     context = {'users': users, 'query': query}
     return render(request, 'yonetim/user_list.html', context)
 
@@ -86,13 +79,12 @@ def goal_list(request):
     context = {'goals': goals, 'stats': stats}
     return render(request, 'yonetim/goal_list.html', context)
 
-# --- 4. TOPLULUK MODERASYONU (ŞİKAYET ODAKLI) ---
+# --- 4. TOPLULUK MODERASYONU ---
 @staff_member_required(login_url='/gizli-admin/login/')
 def post_list(request):
     posts = Post.objects.annotate(
         report_count=Count('reports')
     ).select_related('user').prefetch_related('reports').order_by('-report_count', '-created_at')
-    
     context = {'posts': posts}
     return render(request, 'yonetim/post_list.html', context)
 
@@ -103,3 +95,24 @@ def post_delete(request, pk):
     post.delete()
     messages.success(request, f'"{title}" başlıklı gönderi moderasyon gereği silindi.')
     return redirect('yonetim:post_list')
+
+# --- 5. 🚨 YENİ: BAŞARI VE LOG ANALİZİ ---
+@staff_member_required(login_url='/gizli-admin/login/')
+def success_tracking(request):
+    # Son giren 20 günlük raporu çekiyoruz
+    recent_logs = DailyLog.objects.select_related('goal__user').order_by('-date')[:20]
+    
+    # İstatistikler
+    total_logs = DailyLog.objects.count()
+    relapse_count = DailyLog.objects.filter(relapse=True).count()
+    
+    # Ortalama zorlanma seviyesi hesaplama
+    avg_craving = DailyLog.objects.aggregate(Avg('craving_level'))['craving_level__avg']
+
+    context = {
+        'recent_logs': recent_logs,
+        'relapse_count': relapse_count,
+        'total_logs': total_logs,
+        'avg_craving': round(avg_craving, 1) if avg_craving else 0
+    }
+    return render(request, 'yonetim/success_tracking.html', context)

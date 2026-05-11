@@ -15,6 +15,9 @@
         .stat-card:hover { transform: translateY(-5px); }
         .text-decoration-none:hover .stat-card { box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
         .activity-card { border-radius: 15px; border: none; }
+        /* Analiz butonu için özel efekt */
+        .btn-analysis { transition: all 0.3s ease; border: none; }
+        .btn-analysis:hover { transform: scale(1.02); box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important; }
     </style>
 </head>
 <body>
@@ -39,7 +42,7 @@
     <div class="container mt-5 mb-5">
         <h3 class="fw-bold mb-4 text-secondary">Sistem Özeti</h3>
         
-        <div class="row g-4 mb-5">
+        <div class="row g-4 mb-4">
             <div class="col-md-4">
                 <a href="{% url 'yonetim:user_list' %}" class="text-decoration-none">
                     <div class="card stat-card border-0 shadow-sm rounded-4 h-100">
@@ -86,6 +89,16 @@
                         </div>
                     </div>
                 </a>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="mt-2 text-center">
+                    <a href="{% url 'yonetim:success_tracking' %}" class="btn btn-primary btn-analysis rounded-pill px-5 py-3 shadow-sm fw-bold">
+                        <i class="bi bi-activity me-2"></i> Detaylı Kullanıcı Başarı Analizini Görüntüle
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -141,7 +154,7 @@
     <script>
         const ctx = document.getElementById('dependencyChart').getContext('2d');
         const dependencyChart = new Chart(ctx, {
-            type: 'doughnut', // Pasta grafik
+            type: 'doughnut',
             data: {
                 labels: {{ chart_labels|safe }},
                 datasets: [{

@@ -12,4 +12,5 @@ urlpatterns = [
     path('hedefler/', views.goal_list, name='goal_list'),
     path('topluluk/', views.post_list, name='post_list'),
     path('topluluk/sil/<int:pk>/', views.post_delete, name='post_delete'),
+    path('basari-takibi/', views.success_tracking, name='success_tracking'),
 ]
