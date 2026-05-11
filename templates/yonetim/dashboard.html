@@ -15,7 +15,6 @@
         .stat-card:hover { transform: translateY(-5px); }
         .text-decoration-none:hover .stat-card { box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
         .activity-card { border-radius: 15px; border: none; }
-        /* Analiz butonu için özel efekt */
         .btn-analysis { transition: all 0.3s ease; border: none; }
         .btn-analysis:hover { transform: scale(1.02); box-shadow: 0 8px 15px rgba(13, 110, 253, 0.3) !important; }
     </style>
@@ -29,7 +28,11 @@
             </a>
             
             <div class="d-flex align-items-center">
-                <span class="text-light me-4 small">
+                <a href="/gizli-admin/" class="btn btn-sm btn-outline-warning rounded-pill px-3 me-2" target="_blank">
+                    <i class="bi bi-gear-fill me-1"></i> Teknik Panel
+                </a>
+
+                <span class="text-light me-4 small d-none d-md-inline">
                     <i class="bi bi-person-circle me-1"></i> Yetkili: <strong class="text-success">{{ request.user.username }}</strong>
                 </span>
                 <a href="/" class="btn btn-sm btn-outline-light rounded-pill px-3 me-2">
@@ -40,6 +43,12 @@
     </nav>
 
     <div class="container mt-5 mb-5">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} rounded-4 shadow-sm mb-4">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
         <h3 class="fw-bold mb-4 text-secondary">Sistem Özeti</h3>
         
         <div class="row g-4 mb-4">
@@ -106,8 +115,29 @@
                                 <h6 class="small fw-bold text-muted text-uppercase mb-3">🔥 Yüksek Cayma Riski</h6>
                                 {% for u in high_craving_users %}
                                     <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-danger bg-opacity-10 rounded-3">
-                                        <span class="fw-bold small">{{ u.goal__user__username }}</span>
-                                        <span class="badge bg-danger">Ort: {{ u.avg_craving|floatformat:1 }}</span>
+                                        <span class="fw-bold small">{{ u.goal__user__username }} (Ort: {{ u.avg_craving|floatformat:1 }})</span>
+                                        
+                                        <button class="btn btn-sm btn-danger rounded-pill px-2" style="font-size: 0.7rem;" 
+                                                data-bs-toggle="modal" data-bs-target="#msgModal{{ u.goal__user__id }}">
+                                            <i class="bi bi-send-fill"></i> Destek At
+                                        </button>
+                                    </div>
+
+                                    <div class="modal fade" id="msgModal{{ u.goal__user__id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-sm modal-dialog-centered">
+                                            <div class="modal-content border-0 rounded-4 shadow">
+                                                <form action="{% url 'yonetim:send_support_message' u.goal__user__id %}" method="POST">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body p-4">
+                                                        <h6 class="fw-bold mb-3 text-dark">{{ u.goal__user__username }} İçin Mesaj</h6>
+                                                        <textarea name="message" class="form-control rounded-3" rows="3" placeholder="Sana inanıyoruz, pes etme!"></textarea>
+                                                    </div>
+                                                    <div class="modal-footer border-0 pt-0">
+                                                        <button type="submit" class="btn btn-danger btn-sm rounded-pill w-100">Gönder</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
                                     </div>
                                 {% empty %}
                                     <p class="text-success small mb-0"><i class="bi bi-check-circle me-1"></i> Kritik seviyede kullanıcı yok.</p>
@@ -153,63 +183,30 @@
                     <h5 class="fw-bold text-secondary mb-4">Son Aktiviteler</h5>
                     <ul class="list-group list-group-flush">
                         {% for goal in recent_goals %}
-                        <li class="list-group-item px-0 py-3 border-0 border-bottom">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-success bg-opacity-10 p-2 rounded me-3 text-success">
-                                    <i class="bi bi-plus-circle"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 small"><strong>{{ goal.user.username }}</strong> yeni bir hedef açtı:</p>
-                                    <span class="badge bg-light text-dark">{{ goal.get_dependency_type_display }}</span>
-                                    <small class="text-muted ms-2">{{ goal.start_date|date:"d M" }}</small>
-                                </div>
-                            </div>
-                        </li>
-                        {% endfor %}
-
-                        {% for u in recent_users %}
-                        <li class="list-group-item px-0 py-3 border-0">
-                            <div class="d-flex align-items-center">
-                                <div class="bg-primary bg-opacity-10 p-2 rounded me-3 text-primary">
-                                    <i class="bi bi-person-plus"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 small"><strong>{{ u.username }}</strong> sisteme kayıt oldu.</p>
-                                    <small class="text-muted">{{ u.date_joined|date:"d M Y, H:i" }}</small>
-                                </div>
-                            </div>
+                        <li class="list-group-item px-0 py-3 border-0 border-bottom small">
+                            <i class="bi bi-plus-circle text-success me-2"></i><strong>{{ goal.user.username }}</strong>: {{ goal.get_dependency_type_display }} hedefi açtı.
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
         const ctx = document.getElementById('dependencyChart').getContext('2d');
-        const dependencyChart = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: {{ chart_labels|safe }},
                 datasets: [{
-                    label: 'Hedef Sayısı',
                     data: {{ chart_data|safe }},
-                    backgroundColor: [
-                        '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2'
-                    ],
+                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2'],
                     borderWidth: 0
                 }]
-            },
-            options: {
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
             }
         });
     </script>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
