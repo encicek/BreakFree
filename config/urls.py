@@ -31,7 +31,7 @@ urlpatterns = [
     path('login/', RedirectView.as_view(url='/accounts/login/', permanent=False)),
 
     # 2. Uygulama Yolları (Eski kodlarına dokunmadık)
-    path('admin/', admin.site.urls),
+    path('gizli-admin/', admin.site.urls),
     path('yonetim/', include('yonetim.urls')),
     path('tracking/', include('tracking.urls')),
     path('community/', include(('community.urls', 'community'), namespace='community')),
