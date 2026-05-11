@@ -1,9 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
+from django.contrib import messages
+from django.db.models import Q
 from tracking.models import DependencyGoal
 from community.models import Post
-from django.db.models import Q # 🚨 ARAMA (FİLTRELEME) İÇİN GEREKLİ
 
 @staff_member_required(login_url='/gizli-admin/login/') 
 def dashboard(request):
@@ -17,8 +18,6 @@ def dashboard(request):
         'total_posts': total_posts,
     }
     return render(request, 'yonetim/dashboard.html', context)
-
-# yonetim/views.py
 
 @staff_member_required(login_url='/gizli-admin/login/') 
 def user_list(request):
@@ -36,3 +35,34 @@ def user_list(request):
         'query': query,
     }
     return render(request, 'yonetim/user_list.html', context)
+
+# 🚨 YENİ: KULLANICI SİLME FONKSİYONU
+@staff_member_required(login_url='/gizli-admin/login/')
+def user_delete(request, pk):
+    user_to_delete = get_object_or_404(User, pk=pk)
+    
+    # Kendini silmeyi engelleme
+    if user_to_delete == request.user:
+        messages.error(request, "Kendi yönetici hesabınızı silemezsiniz!")
+    else:
+        username = user_to_delete.username
+        user_to_delete.delete()
+        messages.success(request, f"{username} isimli kullanıcı başarıyla silindi.")
+        
+    return redirect('yonetim:user_list')
+
+# 🚨 YENİ: KULLANICI EKLEME FONKSİYONU
+@staff_member_required(login_url='/gizli-admin/login/')
+def user_create(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Bu kullanıcı adı zaten sistemde kayıtlı.")
+        else:
+            User.objects.create_user(username=username, email=email, password=password)
+            messages.success(request, f"{username} kullanıcısı başarıyla oluşturuldu.")
+            
+    return redirect('yonetim:user_list')

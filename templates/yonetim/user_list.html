@@ -10,6 +10,7 @@
         body { background-color: #f4f6f9; }
         .admin-navbar { background-color: #212529; }
         .badge-emoji { font-size: 1.2rem; margin-right: 3px; }
+        .btn-delete:hover { color: #dc3545 !important; background-color: #f8d7da !important; }
     </style>
 </head>
 <body>
@@ -28,15 +29,31 @@
     </nav>
 
     <div class="container mt-5">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+                    {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% else %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-secondary mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Kullanıcı Listesi</h3>
             
-            <form method="GET" action="" class="d-flex w-25">
-                <div class="input-group shadow-sm">
-                    <input type="text" name="q" class="form-control" placeholder="Kullanıcı ara..." value="{{ query }}">
-                    <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
-                </div>
-            </form>
+            <div class="d-flex gap-3">
+                <button class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="bi bi-person-plus-fill me-2"></i>Yeni Ekle
+                </button>
+
+                <form method="GET" action="" class="d-flex">
+                    <div class="input-group shadow-sm">
+                        <input type="text" name="q" class="form-control" placeholder="Kullanıcı ara..." value="{{ query }}">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
@@ -46,9 +63,11 @@
                         <tr>
                             <th class="py-3 px-4">KULLANICI ADI</th>
                             <th class="py-3">E-POSTA</th>
-                            <th class="py-3">HEDEFLER</th> <th class="py-3">ROZETLER</th> <th class="py-3">KAYIT TARİHİ</th>
+                            <th class="py-3">HEDEFLER</th> 
+                            <th class="py-3">ROZETLER</th> 
+                            <th class="py-3">KAYIT TARİHİ</th>
                             <th class="py-3 text-center">DURUM</th>
-                        </tr>
+                            <th class="py-3 text-center">İŞLEM</th> </tr>
                     </thead>
                     <tbody>
                         {% for u in users %}
@@ -84,10 +103,22 @@
                                     <span class="badge bg-secondary rounded-pill px-3">Pasif</span>
                                 {% endif %}
                             </td>
+
+                            <td class="text-center">
+                                {% if u.is_staff and u == request.user %}
+                                    <span class="text-muted small">Sen</span>
+                                {% else %}
+                                    <a href="{% url 'yonetim:user_delete' u.pk %}" 
+                                       onclick="return confirm('{{ u.username }} kullanıcısını kalıcı olarak silmek istediğinize emin misiniz?')" 
+                                       class="btn btn-sm btn-outline-secondary rounded-circle border-0 btn-delete">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
+                            <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-search display-4 d-block mb-3 opacity-25"></i>
                                 Aradığınız kriterlere uygun kullanıcı bulunamadı.
                             </td>
@@ -99,5 +130,38 @@
         </div>
     </div>
 
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+          <div class="modal-header border-0 pt-4 px-4">
+            <h5 class="modal-title fw-bold" id="addUserModalLabel">Yeni Kullanıcı Kaydı</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form action="{% url 'yonetim:user_create' %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-body p-4">
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-secondary">Kullanıcı Adı</label>
+                <input type="text" name="username" class="form-control rounded-3 bg-light border-0" placeholder="Örn: yenikullanici" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-secondary">E-Posta</label>
+                <input type="email" name="email" class="form-control rounded-3 bg-light border-0" placeholder="Örn: eposta@adres.com">
+              </div>
+              <div class="mb-4">
+                <label class="form-label small fw-bold text-secondary">Başlangıç Şifresi</label>
+                <input type="password" name="password" class="form-control rounded-3 bg-light border-0" placeholder="••••••••" required>
+              </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+              <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">İptal</button>
+              <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">Kullanıcıyı Kaydet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
