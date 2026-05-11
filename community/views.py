@@ -231,8 +231,21 @@ def report_post(request, post_id):
 @login_required
 def edit_profile(request, goal_id):
     goal = get_object_or_404(DependencyGoal, id=goal_id, user=request.user)
-    form = GoalForm(request.POST or None, instance=goal)
-    if form.is_valid():
-        form.save()
-        return redirect('community:user_profile', username=request.user.username)
+    # Sinyaller sayesinde profil otomatik oluşur, güvenle çağırabiliriz
+    profile = request.user.profile 
+    
+    if request.method == 'POST':
+        # Burası kritik: Template'deki 'form' döngüsü için 
+        # biz burada ProfileForm'u önceliklendiriyoruz
+        form = ProfileForm(request.POST, instance=profile)
+        goal_form = GoalForm(request.POST, instance=goal) # Eğer GoalForm kullanıyorsan
+        
+        if form.is_valid():
+            form.save()
+            if 'goal_form' in locals() and goal_form.is_valid():
+                goal_form.save()
+            return redirect('community:user_profile', username=request.user.username)
+    else:
+        form = ProfileForm(instance=profile)
+    
     return render(request, 'community/edit_profile.html', {'form': form})
