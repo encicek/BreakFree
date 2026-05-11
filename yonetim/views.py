@@ -3,21 +3,44 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Q, Count, Avg
+from django.utils import timezone
+from datetime import timedelta
 from tracking.models import DependencyGoal, DailyLog
 from community.models import Post
 import json
 
-# --- 1. ANA PANEL (DASHBOARD) ---
+# --- 1. ANA PANEL (DASHBOARD) ODAKLI RİSK ANALİZİ ---
 @staff_member_required(login_url='/gizli-admin/login/') 
 def dashboard(request):
+    # Temel Sayılar
     total_users = User.objects.count()
     total_goals = DependencyGoal.objects.count()
     total_posts = Post.objects.count()
 
+    # --- 🚨 KRİTİK UYARI ALGORİTMASI ---
+    iki_gun_once = timezone.now() - timedelta(days=2)
+    
+    # 1. Yüksek İstek Riski: Son 2 günde craving_level ortalaması 8+ olanlar
+    high_craving_users = DailyLog.objects.filter(
+        date__gte=iki_gun_once
+    ).values('goal__user__username', 'goal__user__id').annotate(
+        avg_craving=Avg('craving_level')
+    ).filter(avg_craving__gte=8)
+
+    # 2. Kopma Riski: Son 3 gündür hiç rapor girmeyen aktif hedefler
+    uc_gun_once = timezone.now() - timedelta(days=3)
+    inactive_users = DependencyGoal.objects.filter(
+        is_active=True
+    ).exclude(
+        logs__date__gte=uc_gun_once
+    ).select_related('user')[:5]
+
+    # GRAFİK VERİSİ
     goal_stats = DependencyGoal.objects.values('dependency_type').annotate(total=Count('id'))
     chart_labels = [item['dependency_type'].capitalize() for item in goal_stats]
     chart_data = [item['total'] for item in goal_stats]
 
+    # SON AKTİVİTELER
     recent_users = User.objects.all().order_by('-date_joined')[:3]
     recent_goals = DependencyGoal.objects.select_related('user').order_by('-start_date')[:3]
 
@@ -25,6 +48,8 @@ def dashboard(request):
         'total_users': total_users,
         'total_goals': total_goals,
         'total_posts': total_posts,
+        'high_craving_users': high_craving_users,
+        'inactive_users': inactive_users,
         'chart_labels': json.dumps(chart_labels),
         'chart_data': json.dumps(chart_data),
         'recent_users': recent_users,
@@ -38,7 +63,7 @@ def user_list(request):
     query = request.GET.get('q', '') 
     if query:
         users = User.objects.filter(
-            Q(username__icontains=query) | Q(email__icontains=query)
+            Q(username__icontains=query)
         ).prefetch_related('earned_badges__badge', 'goals').order_by('-date_joined')
     else:
         users = User.objects.all().prefetch_related('earned_badges__badge', 'goals').order_by('-date_joined')
@@ -60,12 +85,11 @@ def user_delete(request, pk):
 def user_create(request):
     if request.method == 'POST':
         username = request.POST.get('username')
-        email = request.POST.get('email')
         password = request.POST.get('password')
         if User.objects.filter(username=username).exists():
             messages.error(request, "Bu kullanıcı adı zaten sistemde kayıtlı.")
         else:
-            User.objects.create_user(username=username, email=email, password=password)
+            User.objects.create_user(username=username, password=password)
             messages.success(request, f"{username} kullanıcısı başarıyla oluşturuldu.")
     return redirect('yonetim:user_list')
 
@@ -94,14 +118,13 @@ def post_delete(request, pk):
     messages.success(request, f'"{title}" başlıklı gönderi moderasyon gereği silindi.')
     return redirect('yonetim:post_list')
 
-# --- 5. 🚨 GÜNCELLENDİ: AKILLI BAŞARI TAKİBİ (GRUPAL VE DETAYLI) ---
+# --- 5. AKILLI BAŞARI TAKİBİ ---
 @staff_member_required(login_url='/gizli-admin/login/')
 def success_tracking(request):
     user_id = request.GET.get('user_id')
     query = request.GET.get('q', '')
 
     if user_id:
-        # SENARYO A: Sadece tek bir kullanıcının geçmişini gör
         selected_user = get_object_or_404(User, pk=user_id)
         logs = DailyLog.objects.filter(goal__user=selected_user).order_by('-date')
         context = {
@@ -110,8 +133,6 @@ def success_tracking(request):
             'logs': logs
         }
     else:
-        # SENARYO B: Genel özet listesi (Arama destekli)
-        # Sadece hedefi ve günlüğü olan kullanıcıları, başarı istatistikleriyle getir
         user_summaries = User.objects.annotate(
             log_count=Count('goals__logs'),
             avg_craving=Avg('goals__logs__craving_level'),
