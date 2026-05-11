@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Hedef Analizi - Yönetim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f4f6f9; }
+        .admin-navbar { background-color: #212529; }
+        .category-pill { font-size: 0.8rem; padding: 5px 12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark admin-navbar shadow-sm py-3">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold" href="{% url 'yonetim:dashboard' %}">BreakFree YÖNETİM</a>
+            <a href="{% url 'yonetim:dashboard' %}" class="btn btn-sm btn-outline-light rounded-pill">Panele Dön</a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h3 class="fw-bold text-secondary mb-4">Açılan Hedefler ve Analiz</h3>
+
+        <div class="row mb-4">
+            {% for stat in stats %}
+            <div class="col">
+                <div class="card border-0 shadow-sm rounded-4 text-center p-3">
+                    <h6 class="text-uppercase text-muted small fw-bold">{{ stat.dependency_type }}</h6>
+                    <h3 class="fw-bold mb-0 text-success">{{ stat.total }}</h3>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light small">
+                        <tr>
+                            <th class="py-3 px-4">KULLANICI</th>
+                            <th class="py-3 text-center">TÜR</th>
+                            <th class="py-3 text-center">BAŞLANGIÇ SKORU</th>
+                            <th class="py-3">MOTİVASYON NOTU</th>
+                            <th class="py-3 text-center">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for goal in goals %}
+                        <tr>
+                            <td class="px-4 fw-bold">{{ goal.user.username }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-dark rounded-pill category-pill">
+                                    {{ goal.get_dependency_type_display }}
+                                </span>
+                            </td>
+                            <td class="text-center font-monospace">{{ goal.initial_score }}/100</td>
+                            <td class="small text-muted">{{ goal.target_note|truncatewords:10 }}</td>
+                            <td class="text-center">
+                                {% if goal.is_active %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

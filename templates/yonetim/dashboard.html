@@ -10,15 +10,16 @@
     <style>
         body { background-color: #f4f6f9; }
         .admin-navbar { background-color: #212529; }
-        .stat-card { transition: transform 0.2s ease-in-out; }
+        .stat-card { transition: transform 0.2s ease-in-out; cursor: pointer; }
         .stat-card:hover { transform: translateY(-5px); }
+        .text-decoration-none:hover .stat-card { box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
     </style>
 </head>
 <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark admin-navbar shadow-sm py-3">
         <div class="container-fluid px-4">
-            <a class="navbar-brand fw-bold" href="#">
+            <a class="navbar-brand fw-bold" href="{% url 'yonetim:dashboard' %}">
                 <i class="bi bi-shield-lock-fill text-success me-2"></i>BreakFree YÖNETİM
             </a>
             
@@ -54,17 +55,19 @@
             </div>
 
             <div class="col-md-4">
-                <div class="card stat-card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4 d-flex align-items-center">
-                        <div class="bg-success bg-opacity-10 p-3 rounded-circle me-4">
-                            <i class="bi bi-bullseye fs-1 text-success"></i>
-                        </div>
-                        <div>
-                            <h6 class="text-muted text-uppercase fw-bold mb-1 small">Açılan Hedefler</h6>
-                            <h2 class="fw-bold mb-0 text-dark">{{ total_goals }}</h2>
+                <a href="{% url 'yonetim:goal_list' %}" class="text-decoration-none">
+                    <div class="card stat-card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-4 d-flex align-items-center">
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle me-4">
+                                <i class="bi bi-bullseye fs-1 text-success"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted text-uppercase fw-bold mb-1 small">Açılan Hedefler</h6>
+                                <h2 class="fw-bold mb-0 text-dark">{{ total_goals }}</h2>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <div class="col-md-4">

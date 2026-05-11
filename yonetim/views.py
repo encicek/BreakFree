@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count # 🚨 Count istatistik analizi için eklendi
 from tracking.models import DependencyGoal
 from community.models import Post
 
@@ -36,12 +36,11 @@ def user_list(request):
     }
     return render(request, 'yonetim/user_list.html', context)
 
-# 🚨 YENİ: KULLANICI SİLME FONKSİYONU
+# 🚨 KULLANICI SİLME FONKSİYONU
 @staff_member_required(login_url='/gizli-admin/login/')
 def user_delete(request, pk):
     user_to_delete = get_object_or_404(User, pk=pk)
     
-    # Kendini silmeyi engelleme
     if user_to_delete == request.user:
         messages.error(request, "Kendi yönetici hesabınızı silemezsiniz!")
     else:
@@ -51,7 +50,7 @@ def user_delete(request, pk):
         
     return redirect('yonetim:user_list')
 
-# 🚨 YENİ: KULLANICI EKLEME FONKSİYONU
+# 🚨 KULLANICI EKLEME FONKSİYONU
 @staff_member_required(login_url='/gizli-admin/login/')
 def user_create(request):
     if request.method == 'POST':
@@ -66,3 +65,19 @@ def user_create(request):
             messages.success(request, f"{username} kullanıcısı başarıyla oluşturuldu.")
             
     return redirect('yonetim:user_list')
+
+# 🚨 YENİ: HEDEF ANALİZİ VE LİSTELEME FONKSİYONU
+@staff_member_required(login_url='/gizli-admin/login/')
+def goal_list(request):
+    # Tüm hedefleri getiriyoruz
+    goals = DependencyGoal.objects.all().select_related('user').order_by('-start_date')
+    
+    # Hangi bağımlılıktan kaç tane var? (Kategorilere göre analiz)
+    # Bu kod veritabanına sorar: "Hangi türden kaç tane satır var say bana"
+    stats = DependencyGoal.objects.values('dependency_type').annotate(total=Count('id'))
+    
+    context = {
+        'goals': goals,
+        'stats': stats,
+    }
+    return render(request, 'yonetim/goal_list.html', context)
