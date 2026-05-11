@@ -10,4 +10,6 @@ urlpatterns = [
     path('kullanicilar/sil/<int:pk>/', views.user_delete, name='user_delete'),
     path('kullanicilar/ekle/', views.user_create, name='user_create'), 
     path('hedefler/', views.goal_list, name='goal_list'),
+    path('topluluk/', views.post_list, name='post_list'),
+    path('topluluk/sil/<int:pk>/', views.post_delete, name='post_delete'),
 ]
