@@ -2,12 +2,10 @@
 
 {% block content %}
 <div class="container mt-5">
-    <!-- Başlık ve Açıklama -->
     <div class="text-center mb-5">
         <h1 class="fw-bold text-dark">Yol Arkadaşlarımı Keşfet</h1>
         <p class="text-muted">Seninle aynı hedefe yürüyen yeni insanlarla tanış ve birbirinize güç verin.</p>
         
-        <!-- Arama Çubuğu -->
         <div class="row justify-content-center mt-4">
             <div class="col-md-6">
                 <form method="GET" action="" class="input-group mb-3 shadow-sm rounded-pill overflow-hidden">
@@ -24,7 +22,6 @@
         {% for user in users %}
             <div class="col-md-4 col-lg-3 mb-4">
                 <div class="card h-100 shadow-sm border-0 user-card-hover" style="border-radius: 15px; overflow: hidden;">
-                    <!-- Üst Renkli Alan ve İkon -->
                     <div class="text-center py-4 bg-primary bg-opacity-10">
                         <div class="rounded-circle bg-white d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px;">
                             <span class="display-6">👤</span>
@@ -34,29 +31,25 @@
                     <div class="card-body text-center p-4">
                         <h5 class="fw-bold mb-1">{{ user.username|capfirst }}</h5>
                         
-                        <!-- Başarı Serisi (Ateş İkonu) -->
                         <div class="mb-3">
                             <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2 small">
-                                🔥 {{ user.goals.first.logs.filter.count|default:"0" }} Günlük Seri
+                                🔥 {{ user.goals.first.streak|default:"0" }} Günlük Seri
                             </span>
                         </div>
 
-                        <!-- BİO KISMI -->
                         <p class="text-muted small mb-4" style="min-height: 45px; line-height: 1.4;">
                             {% if user.goals.first.bio %}
-                                "{{ user.goals.first.bio|truncatechars:60 }}"
+                                "{{ user.goals.first.bio|truncatechars:65 }}"
                             {% else %}
-                                <span class="fst-italic opacity-50">Henüz bir motivasyon notu eklenmemiş.</span>
+                                <span class="fst-italic opacity-50">Henüz kendisi hakkında bir bilgi eklememiş.</span>
                             {% endif %}
                         </p>
 
-                        <!-- Butonlar -->
                         <div class="d-grid gap-2">
                             <a href="{% url 'community:user_profile' username=user.username %}" class="btn btn-outline-primary btn-sm rounded-pill fw-bold">
                                 Profili Görüntüle
                             </a>
 
-                            <!-- Sadece Arkadaş Ekle butonu; çünkü arkadaş oldukların listeden views tarafında elendi -->
                             <a href="{% url 'community:send_request' user_id=user.id %}" class="btn btn-success btn-sm rounded-pill fw-bold">
                                 <i class="bi bi-person-plus-fill"></i> Arkadaş Ekle
                             </a>
@@ -65,7 +58,6 @@
                 </div>
             </div>
         {% empty %}
-            <!-- ARAMA SONUCU BULUNAMADI VEYA EKLEYECEK KİMSE KALMADI UYARISI -->
             <div class="col-12 text-center py-5">
                 <div class="card shadow-sm border-0 p-5 bg-light mx-auto" style="border-radius: 20px; max-width: 600px;">
                     {% if request.GET.search %}

@@ -44,7 +44,7 @@ def community_home(request):
         'query': query
     })
 
-# --- PROFİL SİSTEMİ (BİO GÜNCELLEME EKLENDİ) ---
+# --- PROFİL SİSTEMİ (MOTİVASYON SÖZÜ ODAKLI) ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
@@ -53,15 +53,15 @@ def user_profile(request, username):
     # Hedefler ve Streak Hesaplamaları
     raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
     
-    # 🚀 YENİ: Bio (Hakkımda) İşlemleri için ana hedefi alıyoruz
+    # Motivasyon Sözü (target_note) işlemleri için ana hedefi alıyoruz
     main_goal = raw_goals.first()
 
-    # 🚀 YENİ: Bio Güncelleme Mantığı (Sadece profil sahibi için)
+    # 🚀 GÜNCELLEME: Profil sayfasında artık "Motivasyon Sözü" (target_note) düzenleniyor
     if request.method == 'POST' and request.user == profile_user:
         if 'update_bio' in request.POST:
-            new_bio = request.POST.get('bio_content')
+            new_motivation = request.POST.get('bio_content') # HTML'deki textarea adı bio_content kalabilir
             if main_goal:
-                main_goal.target_note = new_bio # İlk anketteki yazıyı güncelliyoruz
+                main_goal.target_note = new_motivation # Profilde target_note güncellenir
                 main_goal.save()
                 return redirect('community:user_profile', username=username)
 
@@ -112,7 +112,7 @@ def user_profile(request, username):
         'user_badges': user_badges, 
         'chart_labels': json.dumps(chart_labels), 
         'chart_data': json.dumps(chart_data),
-        'goal': main_goal, # 🚀 HTML tarafı için ana hedefi gönderiyoruz
+        'goal': main_goal, 
     })
 
 # --- BİLDİRİMLER ---
@@ -197,7 +197,7 @@ def support_post(request, post_id):
         pass
     return redirect(request.META.get('HTTP_REFERER', 'community:community_home'))
 
-# --- DİĞER FONKSİYONLAR ---
+# --- ARKADAŞ BUL (USER LIST) - BİO ODAKLI ---
 @login_required
 def user_list(request):
     search_query = request.GET.get('search', '').strip()
@@ -205,9 +205,13 @@ def user_list(request):
     for f in Friendship.objects.filter(Q(from_user=request.user) | Q(to_user=request.user)):
         exclude_ids.add(f.from_user_id)
         exclude_ids.add(f.to_user_id)
-    users = User.objects.filter(is_superuser=False).exclude(id__in=exclude_ids)
+    
+    # 🚀 GÜNCELLEME: Kullanıcıları hedefleriyle birlikte çekiyoruz (Bio'yu göstermek için)
+    users = User.objects.filter(is_superuser=False).exclude(id__in=exclude_ids).prefetch_related('goals')
+    
     if search_query: 
         users = users.filter(username__icontains=search_query)
+    
     return render(request, 'community/user_list.html', {'users': users, 'search_query': search_query})
 
 @login_required
