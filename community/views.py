@@ -11,15 +11,14 @@ from tracking.forms import GoalForm
 from .forms import PostForm, CommentForm
 import datetime
 import json 
+import random
 
-# --- TOPLULUK ANA SAYFASI (STABİLİZE EDİLDİ) ---
+# --- TOPLULUK ANA SAYFASI ---
 @login_required
 def community_home(request):
     query = request.GET.get('q', '').strip() 
     category_filter = request.GET.get('category') 
     
-    # 🚨 DÜZENLEME: Veritabanında olmayan 'is_published' filtresi kaldırıldı.
-    # Bu sayede ProgrammingError tamamen engellendi.
     posts_list = Post.objects.all().order_by('-created_at')
 
     if query:
@@ -35,7 +34,6 @@ def community_home(request):
     paginator = Paginator(posts_list, 10) 
     posts = paginator.get_page(request.GET.get('page'))
     
-    # AJAX isteği (Otomatik yenileme için)
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render_to_string('community/posts_list_partial.html', {'posts': posts})
         return HttpResponse(html)
@@ -46,16 +44,27 @@ def community_home(request):
         'query': query
     })
 
-# --- PROFİL SİSTEMİ (TÜM ÖZELLİKLER KORUNDU) ---
+# --- PROFİL SİSTEMİ (BİO GÜNCELLEME EKLENDİ) ---
 @login_required
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    
-    # 🚨 DÜZENLEME: Profildeki gönderi filtresi de stabilize edildi.
     posts = Post.objects.filter(user=profile_user).order_by('-created_at')
 
     # Hedefler ve Streak Hesaplamaları
     raw_goals = DependencyGoal.objects.filter(user=profile_user, is_active=True)
+    
+    # 🚀 YENİ: Bio (Hakkımda) İşlemleri için ana hedefi alıyoruz
+    main_goal = raw_goals.first()
+
+    # 🚀 YENİ: Bio Güncelleme Mantığı (Sadece profil sahibi için)
+    if request.method == 'POST' and request.user == profile_user:
+        if 'update_bio' in request.POST:
+            new_bio = request.POST.get('bio_content')
+            if main_goal:
+                main_goal.target_note = new_bio # İlk anketteki yazıyı güncelliyoruz
+                main_goal.save()
+                return redirect('community:user_profile', username=username)
+
     active_goals_with_stats = []
     for goal in raw_goals:
         last_relapse = DailyLog.objects.filter(goal=goal, relapse=True).order_by('-date').first()
@@ -91,9 +100,6 @@ def user_profile(request, username):
     chart_labels = [log.date.strftime("%d %b") for log in ten_days_logs]
     chart_data = [log.craving_level for log in ten_days_logs]
 
-    # Sosyal Akış (Sadece kendi profili ise)
-    friend_activities_list = DailyLog.objects.filter(goal__user__in=[u.id for u in friend_list], relapse=False).order_by('-date') if request.user == profile_user else []
-    friend_activities = Paginator(friend_activities_list, 5).get_page(request.GET.get('friend_page'))
     recent_logs = DailyLog.objects.filter(goal__user=profile_user).order_by('-date')[:5]
 
     return render(request, 'community/user_profile.html', {
@@ -102,11 +108,11 @@ def user_profile(request, username):
         'active_goals': active_goals_with_stats, 
         'status_label': status_label,
         'friend_list': friend_list, 
-        'friend_activities': friend_activities, 
         'recent_logs': recent_logs,
         'user_badges': user_badges, 
         'chart_labels': json.dumps(chart_labels), 
-        'chart_data': json.dumps(chart_data),     
+        'chart_data': json.dumps(chart_data),
+        'goal': main_goal, # 🚀 HTML tarafı için ana hedefi gönderiyoruz
     })
 
 # --- BİLDİRİMLER ---
