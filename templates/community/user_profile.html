@@ -142,15 +142,11 @@
                                 <div class="text-center" title="{{ ub.badge.description }}" data-bs-toggle="tooltip">
                                     <div class="fs-1">{{ ub.badge.image_name }}</div>
                                     <div class="fw-bold small text-dark" style="font-size: 0.7rem;">{{ ub.badge.name }}</div>
+                                    <div class="text-muted" style="font-size: 0.6rem;">{{ ub.earned_at|date:"d M Y" }}</div>
                                 </div>
                             {% empty %}
-                                <div class="text-center">
-                                    <div class="fs-1">🏆</div>
-                                    <div class="fw-bold small" style="font-size: 0.7rem;">Kararlı</div>
-                                </div>
-                                <div class="text-center">
-                                    <div class="fs-1">⚡</div>
-                                    <div class="fw-bold small" style="font-size: 0.7rem;">Hızlı Başlangıç</div>
+                                <div class="text-center py-2 px-3">
+                                    <p class="small text-muted fst-italic mb-0">Henüz rozet kazanılmadı.</p>
                                 </div>
                             {% endfor %}
                         </div>
@@ -213,7 +209,6 @@
 </div>
 
 <script>
-// 1. Grafik Mantığı (Chart.js)
 document.addEventListener("DOMContentLoaded", function() {
     const ctx = document.getElementById('profileCravingChart');
     if (ctx) {
@@ -249,7 +244,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// 2. Arkadaş Çıkarma Mantığı (SweetAlert2)
 function confirmRemoval(removeUrl) {
     Swal.fire({
         title: 'Emin misin?',
@@ -261,12 +255,7 @@ function confirmRemoval(removeUrl) {
         confirmButtonText: 'Evet, çıkar!',
         cancelButtonText: 'Vazgeç',
         background: '#fff',
-        borderRadius: '1.25rem',
-        customClass: {
-            title: 'fw-bold',
-            confirmButton: 'rounded-pill px-4',
-            cancelButton: 'rounded-pill px-4'
-        }
+        borderRadius: '1.25rem'
     }).then((result) => {
         if (result.isConfirmed) {
             window.location.href = removeUrl;
@@ -274,5 +263,4 @@ function confirmRemoval(removeUrl) {
     })
 }
 </script>
-
 {% endblock %}
