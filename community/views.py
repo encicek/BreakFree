@@ -56,12 +56,12 @@ def user_profile(request, username):
     # Motivasyon Sözü (target_note) işlemleri için ana hedefi alıyoruz
     main_goal = raw_goals.first()
 
-    # 🚀 GÜNCELLEME: Profil sayfasında artık "Motivasyon Sözü" (target_note) düzenleniyor
+    # Profil sayfasında artık "Motivasyon Sözü" (target_note) düzenleniyor
     if request.method == 'POST' and request.user == profile_user:
         if 'update_bio' in request.POST:
-            new_motivation = request.POST.get('bio_content') # HTML'deki textarea adı bio_content kalabilir
+            new_motivation = request.POST.get('bio_content')
             if main_goal:
-                main_goal.target_note = new_motivation # Profilde target_note güncellenir
+                main_goal.target_note = new_motivation
                 main_goal.save()
                 return redirect('community:user_profile', username=username)
 
@@ -197,7 +197,7 @@ def support_post(request, post_id):
         pass
     return redirect(request.META.get('HTTP_REFERER', 'community:community_home'))
 
-# --- ARKADAŞ BUL (USER LIST) - BİO ODAKLI ---
+# --- ARKADAŞ BUL (USER LIST) - BİO VE SERİ ODAKLI ---
 @login_required
 def user_list(request):
     search_query = request.GET.get('search', '').strip()
@@ -206,11 +206,23 @@ def user_list(request):
         exclude_ids.add(f.from_user_id)
         exclude_ids.add(f.to_user_id)
     
-    # 🚀 GÜNCELLEME: Kullanıcıları hedefleriyle birlikte çekiyoruz (Bio'yu göstermek için)
     users = User.objects.filter(is_superuser=False).exclude(id__in=exclude_ids).prefetch_related('goals')
     
     if search_query: 
         users = users.filter(username__icontains=search_query)
+
+    # 🚀 SERİ HESAPLAMA MANTIĞI: Listedeki her kullanıcı için streak hesaplıyoruz
+    for user in users:
+        goal = user.goals.filter(is_active=True).first()
+        if goal:
+            last_relapse = DailyLog.objects.filter(goal=goal, relapse=True).order_by('-date').first()
+            if last_relapse:
+                streak = DailyLog.objects.filter(goal=goal, relapse=False, date__gt=last_relapse.date).values('date').distinct().count()
+            else:
+                streak = DailyLog.objects.filter(goal=goal, relapse=False).values('date').distinct().count()
+            user.calculated_streak = streak
+        else:
+            user.calculated_streak = 0
     
     return render(request, 'community/user_list.html', {'users': users, 'search_query': search_query})
 
