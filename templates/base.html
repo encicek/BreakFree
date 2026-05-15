@@ -82,7 +82,7 @@
                         <li class="nav-item"><a class="nav-link" href="{% url 'tracking:dashboard' %}">Takip Paneli</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'community:community_home' %}">Topluluk</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'community:user_list' %}">Arkadaş Bul</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'community:user_profile' request.user.username %}">Profilim</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'community:user_profile' username=request.user.username %}">Profilim</a></li>
                     {% endif %}
                 </ul>
 
@@ -101,15 +101,15 @@
                             <i class="bi bi-exclamation-triangle-fill me-1"></i> Zorlanıyorum
                         </button>
 
-                        <form action="{% url 'accounts:logout' %}" method="post" class="m-0">
+                        <form action="{% url 'logout' %}" method="post" class="m-0">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-link text-danger fw-bold text-decoration-none small p-0 ms-2">
                                 Çıkış Yap
                             </button>
                         </form>
                     {% else %}
-                        <a class="nav-link text-white" href="{% url 'accounts:login' %}">Giriş Yap</a>
-                        <a class="btn btn-success btn-sm rounded-pill px-4" href="{% url 'accounts:register' %}">Kayıt Ol</a>
+                        <a class="nav-link text-white" href="{% url 'login' %}">Giriş Yap</a>
+                        <a class="btn btn-success btn-sm rounded-pill px-4" href="{% url 'register' %}">Kayıt Ol</a>
                     {% endif %}
                 </div>
             </div>
