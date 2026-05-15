@@ -16,6 +16,14 @@
                         Arkadaşının hedeflerini ve gelişimini buradan takip edebilirsin.
                     {% endif %}
                 </p>
+                
+                {% if request.user == profile_user %}
+                <div class="mt-3">
+                    <a href="{% url 'password_change' %}" class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm">
+                        <i class="bi bi-shield-lock-fill me-1"></i> Şifremi Değiştir
+                    </a>
+                </div>
+                {% endif %}
             </div>
 
             {% if profile_user != request.user %}
