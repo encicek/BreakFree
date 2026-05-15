@@ -8,7 +8,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -19,9 +18,8 @@ SECRET_KEY = 'django-insecure-(z5*w&n@$=id8oxc)369)5cs39&*&vx3zlb^oigdi5m+0+$g9j
 DEBUG = True
 
 # Application definition
-
 INSTALLED_APPS = [
-    'tracking.apps.TrackingConfig',  # EN BAŞA ALDIK
+    'tracking.apps.TrackingConfig',  # Uygulama önceliği için başta kalsın
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -32,7 +30,6 @@ INSTALLED_APPS = [
     'accounts',
     'community',
     'core',
-
     'yonetim',
 ]
 
@@ -52,7 +49,6 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # ÖNEMLİ: Ana dizindeki templates klasörü
         'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -69,7 +65,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
 # Database
 DATABASES = {
     'default': dj_database_url.config(
@@ -78,23 +73,13 @@ DATABASES = {
     )
 }
 
-
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
-
 
 # Internationalization
 LANGUAGE_CODE = 'tr-tr'
@@ -102,24 +87,34 @@ TIME_ZONE = 'Europe/Istanbul'
 USE_I18N = True
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 STATICFILES_DIRS = [BASE_DIR / 'static']
-
-# Render'da dosyaların düzgün sunulması için gerekli olan satır
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# URL Yönlendirmeleri
+# --- 🔐 GÜVENLİK VE YÖNLENDİRME AYARLARI ---
+# Giriş yapılmadığında yönlendirilecek sayfa
 LOGIN_URL = '/accounts/login/'
+# Çıkış yapıldığında yönlendirilecek sayfa
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+# Giriş başarıyla yapıldığında gidilecek sayfa
 LOGIN_REDIRECT_URL = '/tracking/dashboard/'
 
-# Güvenlik ve Render Ayarları
+# 🛡️ Ekstra Oturum Güvenliği
+# Tarayıcı kapatıldığında oturumu sonlandırır
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Kullanıcıyı 30 dakika işlem yapmazsa otomatik dışarı atar (saniye cinsinden)
+SESSION_COOKIE_AGE = 1800 
+
+# Render ve Güvenlik Protokolleri
 ALLOWED_HOSTS = ['breakfree-0apn.onrender.com', '127.0.0.1', 'localhost']
 CSRF_TRUSTED_ORIGINS = ['https://breakfree-0apn.onrender.com']
 
+# Render/SSL Ayarları
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
